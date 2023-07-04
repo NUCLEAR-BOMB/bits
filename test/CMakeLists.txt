@@ -9,6 +9,13 @@ $<IF:$<CXX_COMPILER_ID:MSVC>,
 	-Wall -Wextra -Wpedantic -Wconversion -Werror
 >)
 
+set_target_properties("bits-test" PROPERTIES
+    VS_GLOBAL_RunCodeAnalysis true
+    VS_GLOBAL_EnableMicrosoftCodeAnalysis false
+    VS_GLOBAL_EnableClangTidyCodeAnalysis true
+	CXX_CLANG_TIDY clang-tidy
+)
+
 include(FetchContent)
 FetchContent_Declare(
     googletest
