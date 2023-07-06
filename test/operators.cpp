@@ -22,6 +22,14 @@ TEST_F(operators, equal) {
 	EXPECT_TRUE(1 == bits{value});
 	EXPECT_TRUE(2 == bits{const_value});
 	static_assert(3 == bits{constexpr_value});
+
+	EXPECT_TRUE(bits{value} == bits{value});
+	EXPECT_TRUE(bits{const_value} == bits{const_value});
+	static_assert(bits{constexpr_value} == bits{constexpr_value});
+
+	EXPECT_FALSE(bits{value} == bits{const_value});
+	EXPECT_FALSE(bits{const_value} == bits{value});
+	EXPECT_FALSE(bits{value} == bits{constexpr_value});
 }
 
 }
