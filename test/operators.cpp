@@ -46,4 +46,60 @@ TEST_F(operators, not_equal) {
 	EXPECT_TRUE(bits{value} != bits{constexpr_value});
 }
 
+TEST_F(operators, greater) {
+	EXPECT_TRUE(bits{value} > 0);
+	EXPECT_TRUE(bits{const_value} > 1);
+	static_assert(bits{constexpr_value} > 2);
+
+	EXPECT_FALSE(bits{value} > bits{value});
+	EXPECT_FALSE(bits{const_value} > bits{const_value});
+	static_assert(!(bits{constexpr_value} > bits{constexpr_value}));
+
+	EXPECT_TRUE(bits{const_value} > bits{value});
+	EXPECT_FALSE(bits{value} > bits{const_value});
+	EXPECT_TRUE(bits{constexpr_value} > bits{value});
+}
+
+TEST_F(operators, greater_equal) {
+	EXPECT_TRUE(bits{value} >= 1);
+	EXPECT_TRUE(bits{const_value} >= 2);
+	static_assert(bits{constexpr_value} >= 2);
+
+	EXPECT_TRUE(bits{value} >= bits{value});
+	EXPECT_TRUE(bits{const_value} >= bits{const_value});
+	static_assert(bits{constexpr_value} >= bits{constexpr_value});
+
+	EXPECT_TRUE(bits{const_value} >= bits{value});
+	EXPECT_FALSE(bits{value} >= bits{const_value});
+	EXPECT_TRUE(bits{constexpr_value} >= bits{value});
+}
+
+TEST_F(operators, less) {
+	EXPECT_TRUE(bits{value} < 2);
+	EXPECT_TRUE(bits{const_value} < 3);
+	static_assert(bits{constexpr_value} < 4);
+
+	EXPECT_FALSE(bits{value} < bits{value});
+	EXPECT_FALSE(bits{const_value} < bits{const_value});
+	static_assert(!(bits{constexpr_value} < bits{constexpr_value}));
+
+	EXPECT_FALSE(bits{const_value} < bits{value});
+	EXPECT_TRUE(bits{value} < bits{const_value});
+	EXPECT_FALSE(bits{constexpr_value} < bits{value});
+}
+
+TEST_F(operators, less_equal) {
+	EXPECT_TRUE(bits{value} <= 1);
+	EXPECT_TRUE(bits{const_value} <= 2);
+	static_assert(bits{constexpr_value} <= 4);
+
+	EXPECT_TRUE(bits{value} <= bits{value});
+	EXPECT_TRUE(bits{const_value} <= bits{const_value});
+	static_assert(bits{constexpr_value} <= bits{constexpr_value});
+
+	EXPECT_FALSE(bits{const_value} <= bits{value});
+	EXPECT_TRUE(bits{value} <= bits{const_value});
+	EXPECT_FALSE(bits{constexpr_value} <= bits{value});
+}
+
 }
