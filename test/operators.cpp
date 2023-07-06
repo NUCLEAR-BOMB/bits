@@ -32,4 +32,18 @@ TEST_F(operators, equal) {
 	EXPECT_FALSE(bits{value} == bits{constexpr_value});
 }
 
+TEST_F(operators, not_equal) {
+	EXPECT_FALSE(bits{value} != 1);
+	EXPECT_FALSE(bits{const_value} != 2);
+	static_assert(!(bits{constexpr_value} != 3));
+
+	EXPECT_FALSE(bits{value} != bits{value});
+	EXPECT_FALSE(bits{const_value} != bits{const_value});
+	static_assert(!(bits{constexpr_value} != bits{constexpr_value}));
+
+	EXPECT_TRUE(bits{value} != bits{const_value});
+	EXPECT_TRUE(bits{const_value} != bits{value});
+	EXPECT_TRUE(bits{value} != bits{constexpr_value});
+}
+
 }

@@ -69,6 +69,12 @@ public:
 			"The size of the operands is not equal to");
 		return bit_compare<std::equal_to<>>(unwrap(left), unwrap(right));
 	}
+	template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
+	friend constexpr bool operator!=(const Left& left, const Right& right) {
+		static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
+			"The size of the operands is not equal to");
+		return bit_compare<std::not_equal_to<>>(unwrap(left), unwrap(right));
+	}
 
 private:
 	Value& m_value;
