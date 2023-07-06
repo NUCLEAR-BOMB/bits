@@ -11,8 +11,6 @@ public:
 
 	explicit constexpr bits(Value& val) noexcept : m_value(val) {}
 
-	bits(Value&&) = delete;
-
 	constexpr Value& value() { return m_value; }
 	constexpr const Value& value() const { return m_value; }
 
@@ -105,5 +103,7 @@ private:
 	Value& m_value;
 };
 
-template<class Value>
-bits(Value&) -> bits<Value>;
+template<class T>
+bits(T&) -> bits<T>;
+template<class T>
+bits(const T&) -> bits<const T>;

@@ -22,4 +22,9 @@ TEST_F(basic, value_method) {
 	static_assert(bits{constexpr_value}.value() == constexpr_value);
 }
 
+TEST_F(basic, constructor_in_place) {
+	(void)bits{1};
+	(void)bits{1.f};
+}
+
 }
