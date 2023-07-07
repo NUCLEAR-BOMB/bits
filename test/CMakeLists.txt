@@ -10,9 +10,9 @@ $<IF:$<CXX_COMPILER_ID:MSVC>,
 >)
 
 set_target_properties("bits-test" PROPERTIES
-    VS_GLOBAL_RunCodeAnalysis true
-    VS_GLOBAL_EnableMicrosoftCodeAnalysis false
-    VS_GLOBAL_EnableClangTidyCodeAnalysis true
+    VS_GLOBAL_RunCodeAnalysis YES
+    VS_GLOBAL_EnableMicrosoftCodeAnalysis NO
+    VS_GLOBAL_EnableClangTidyCodeAnalysis YES
 	CXX_CLANG_TIDY clang-tidy
 )
 

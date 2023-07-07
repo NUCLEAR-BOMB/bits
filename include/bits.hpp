@@ -5,6 +5,7 @@
 #include <functional>
 #include <cstdint>
 #include <cstddef>
+#include <array>
 
 template<class Value>
 class bits {
@@ -41,7 +42,8 @@ private:
 
 	template<class T>
 	static constexpr T highest_denominator_of_power2(const T x) {
-		return T(x & (~(x - 1)));
+		const auto result = T(x & (~(x - 1)));
+		return result > sizeof(local_uintmax_t) ? sizeof(local_uintmax_t) : result;
 	}
 
 	template<class T> 

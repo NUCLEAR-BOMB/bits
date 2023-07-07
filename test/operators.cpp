@@ -30,6 +30,12 @@ TEST_F(operators, equal) {
 	EXPECT_FALSE(bits{value} == bits{const_value});
 	EXPECT_FALSE(bits{const_value} == bits{value});
 	EXPECT_FALSE(bits{value} == bits{constexpr_value});
+
+	EXPECT_TRUE(bits{1.f} == bits{1.f});
+
+	int array_1[8]{1, 0};
+	int array_2[8]{0, 1};
+	EXPECT_TRUE(bits{array_1} < bits{array_2});
 }
 
 TEST_F(operators, not_equal) {
