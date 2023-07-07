@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <cstring>
 #include <functional>
+#include <cstdint>
+#include <cstddef>
 
 template<class Value>
 class bits {
@@ -15,6 +17,33 @@ public:
 	constexpr const Value& value() const { return m_value; }
 
 private:
+	template<std::size_t> struct size_as_uint_t;
+	template<> struct size_as_uint_t<1> { using type = std::uint8_t; };
+	template<> struct size_as_uint_t<2> { using type = std::uint16_t; };
+	template<> struct size_as_uint_t<4> { using type = std::uint32_t; };
+#if defined(UINT64_MAX) && UINT64_MAX == UINTMAX_MAX
+	template<> struct size_as_uint_t<8> { using type = std::uint64_t; };
+#endif
+
+#if defined(UINT64_MAX) && UINT64_MAX <= UINTMAX_MAX
+	using local_uintmax_t = std::uint64_t;
+#else
+	using local_uintmax_t = std::uintmax_t;
+#endif
+
+	template<std::size_t N>
+	using size_as_uint = typename size_as_uint_t<N>::type;
+	template<class T>
+	using type_as_uint = size_as_uint<sizeof(T)>;
+
+	template<class T>
+	static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(local_uintmax_t));
+
+	template<class T>
+	static constexpr T highest_denominator_of_power2(const T x) {
+		return T(x & (~(x - 1)));
+	}
+
 	template<class T> 
 	static constexpr decltype(auto) unwrap(const bits<T>& val) { return val.value(); }
 	template<class T>
@@ -23,8 +52,8 @@ private:
 	template<class To, class From>
 	static constexpr void bit_cast_to(To& to, const From& from) {
 		static_assert(sizeof(To) == sizeof(From));
-		if constexpr (std::is_trivially_assignable_v<To, From>) {
-			to = from;
+		if constexpr (std::is_integral_v<To> && std::is_integral_v<From>) {
+			to = To(from);
 		} else {
 			std::memcpy(&to, &from, sizeof(To));
 		}
@@ -32,13 +61,26 @@ private:
 	template<class To, class From>
 	static constexpr void bit_cast_to(const To&, const From&) = delete;
 
+	template<class To, class From>
+	static constexpr To bit_cast(const From& from) {
+		To result{};
+		bit_cast_to(result, from);
+		return result;
+	}
+
 	template<class Fn, class Left, class Right>
 	static constexpr bool bit_compare(const Left& left, const Right& right) {
 		static_assert(sizeof(Left) == sizeof(Right));
-		if constexpr (std::is_same_v<Left, Right> && std::is_trivial_v<Left>) {
-			return Fn{}(left, right);
+		using T = Left;
+		if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+			return Fn{}(type_as_uint<Left>(left), type_as_uint<Right>(right));
+		} else if constexpr (is_convertible_as_uint<T>) {
+			using uint_type = type_as_uint<T>;
+			return Fn{}(bit_cast<uint_type>(left), bit_cast<uint_type>(right));
 		} else {
-			return Fn{}(std::memcmp(&left, &right, sizeof(Left)), 0);
+			constexpr std::size_t pow2_denom = highest_denominator_of_power2(sizeof(T));
+			using as_array_type = std::array<size_as_uint<pow2_denom>, sizeof(T) / pow2_denom>;
+			return Fn{}(bit_cast<as_array_type>(left), bit_cast<as_array_type>(right));
 		}
 	}
 
