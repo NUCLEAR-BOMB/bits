@@ -23,6 +23,10 @@ FetchContent_Declare(
     GIT_TAG v1.13.0
 	FIND_PACKAGE_ARGS NAMES GTest
 )
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(BUILD_GMOCK NO CACHE INTERNAL "")
+set(INSTALL_GTEST NO CACHE INTERNAL "")
+
 FetchContent_MakeAvailable(googletest)
 
 target_link_libraries("bits-test" PRIVATE bits GTest::gtest GTest::gtest_main)
@@ -31,4 +35,4 @@ include(GoogleTest)
 gtest_discover_tests("bits-test")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES FOLDER "GoogleTest")
+set_target_properties(gtest gtest_main PROPERTIES FOLDER "GoogleTest")
