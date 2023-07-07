@@ -29,7 +29,7 @@ set(INSTALL_GTEST NO CACHE INTERNAL "")
 
 FetchContent_MakeAvailable(googletest)
 
-target_link_libraries("bits-test" PRIVATE bits GTest::gtest GTest::gtest_main)
+target_link_libraries("bits-test" PRIVATE bits::bits GTest::gtest GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests("bits-test")

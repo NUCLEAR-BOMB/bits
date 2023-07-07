@@ -10,5 +10,11 @@ target_compile_options("bits" INTERFACE $<$<CXX_COMPILER_ID:MSVC>:
 	/Zc:__cplusplus /Zc:inline /Zc:preprocessor>
 )
 
-enable_testing()
-add_subdirectory(test)
+add_library(bits::bits ALIAS bits)
+
+option(BITS_BUILD_TEST "Enable bits testing" ${PROJECT_IS_TOP_LEVEL})
+
+if (BITS_BUILD_TEST)
+	enable_testing()
+	add_subdirectory(test)
+endif()
