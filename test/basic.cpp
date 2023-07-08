@@ -28,13 +28,13 @@ TEST_F(basic, value_method) {
 	EXPECT_EQ(const_value_value, const_value);
 }
 
-TEST_F(basic, uint_method) {
-	using type = decltype(bits{value}.uint());
+TEST_F(basic, as_uint_method) {
+	using type = decltype(bits{value}.as_uint());
 	static_assert(std::is_unsigned_v<type>);
 
-	EXPECT_EQ(bits{value}.uint(), value);
-	EXPECT_EQ(bits{const_value}.uint(), const_value);
-	static_assert(bits{constexpr_value}.uint() == constexpr_value);
+	EXPECT_EQ(bits{value}.as_uint(), value);
+	EXPECT_EQ(bits{const_value}.as_uint(), const_value);
+	static_assert(bits{constexpr_value}.as_uint() == constexpr_value);
 }
 
 TEST_F(basic, as_method) {

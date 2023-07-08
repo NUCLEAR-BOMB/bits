@@ -130,7 +130,7 @@ private:
 
 public:
 
-	constexpr auto uint() const {
+	constexpr auto as_uint() const {
 		static_assert(is_convertible_as_uint<value_type>, 
 			"can't be represented as an unsigned integer");
 		return bit_cast<type_as_uint<value_type>>(m_value);
@@ -147,12 +147,17 @@ public:
 		return reinterpret_cast<To&>(m_value);
 	}
 
-
-
 	template<class T>
 	constexpr bits& operator=(const T& other) {
 		static_assert(sizeof(value_type) == sizeof(T));
 		bit_cast_to(m_value, other);
+		return *this;
+	}
+	template<class T>
+	constexpr bits& operator+=(const T& other) {
+		static_assert(std::is_integral_v<T>);
+		using uint_type = type_as_uint<value_type>;
+		bit_cast_to(m_value, as_uint() + static_cast<uint_type>(other));
 		return *this;
 	}
 	

@@ -108,4 +108,18 @@ TEST_F(operators, less_equal) {
 	EXPECT_FALSE(bits{constexpr_value} <= bits{value});
 }
 
+TEST_F(operators, addition_assignment) {
+	bits{value} += 1;
+	EXPECT_EQ(value, 2);
+
+	bits{value} += 1234567890u;
+	EXPECT_EQ(value, 1234567892);
+
+	bits{value} += (-2);
+	EXPECT_EQ(value, 1234567890);
+
+	bits{value} += (-1234567890);
+	EXPECT_EQ(value, 0);
+}
+
 }
