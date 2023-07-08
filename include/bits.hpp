@@ -7,6 +7,29 @@
 #include <cstddef>
 #include <array>
 
+#if defined(BITS_COMPILER_INTRINSICS) && BITS_COMPILER_INTRINSICS
+	#define BITS_ENABLE_INTRINSICS 1
+	#ifdef __has_builtin
+		#define BITS_HAS_BUILTIN(x) __has_builtin(x)
+	#else
+		#define BITS_HAS_BUILTIN(x) 0
+	#endif
+#else
+	#define BITS_ENABLE_INTRINSICS 0
+	#define BITS_HAS_BUILTIN(x) 0
+#endif
+
+#if BITS_ENABLE_INTRINSICS && (defined(_MSC_VER) || BITS_HAS_BUILTIN(__builtin_bit_cast))
+	#define BITS_HAS_BIT_CAST_INTRINSICS 1
+#else
+	#define BITS_HAS_BIT_CAST_INTRINSICS 0
+#endif
+#if BITS_ENABLE_INTRINSICS && (defined(_MSC_VER) || BITS_HAS_BUILTIN(__builtin_is_constant_evaluated))
+	#define BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS 1
+#else
+	#define BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS 0
+#endif
+
 template<class Value>
 class bits {
 public:
@@ -41,7 +64,7 @@ private:
 	static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(local_uintmax_t));
 
 	template<class T>
-	static constexpr T highest_denominator_of_power2(const T x) {
+	static constexpr T denominator_of_power2(const T x) {
 		const auto result = T(x & (~(x - 1)));
 		return result > sizeof(local_uintmax_t) ? sizeof(local_uintmax_t) : result;
 	}
@@ -55,8 +78,14 @@ private:
 	static constexpr void bit_cast_to(To& to, const From& from) {
 		static_assert(sizeof(To) == sizeof(From));
 		if constexpr (std::is_integral_v<To> && std::is_integral_v<From>) {
-			to = To(from);
+			to = static_cast<To>(from);
 		} else {
+#if BITS_HAS_BIT_CAST_INTRINSICS
+			if constexpr (std::is_trivially_copy_constructible_v<To>) {
+				to = __builtin_bit_cast(To, from);
+				return;
+			}
+#endif
 			std::memcpy(&to, &from, sizeof(To));
 		}
 	}
@@ -65,9 +94,13 @@ private:
 
 	template<class To, class From>
 	static constexpr To bit_cast(const From& from) {
+#if BITS_HAS_BIT_CAST_INTRINSICS
+		return __builtin_bit_cast(To, from);
+#else
 		To result{};
 		bit_cast_to(result, from);
 		return result;
+#endif
 	}
 
 	template<class Fn, class Left, class Right>
@@ -80,7 +113,7 @@ private:
 			using uint_type = type_as_uint<T>;
 			return Fn{}(bit_cast<uint_type>(left), bit_cast<uint_type>(right));
 		} else {
-			constexpr std::size_t pow2_denom = highest_denominator_of_power2(sizeof(T));
+			constexpr std::size_t pow2_denom = denominator_of_power2(sizeof(T));
 			using as_array_type = std::array<size_as_uint<pow2_denom>, sizeof(T) / pow2_denom>;
 			return Fn{}(bit_cast<as_array_type>(left), bit_cast<as_array_type>(right));
 		}
@@ -151,3 +184,8 @@ template<class T>
 bits(T&) -> bits<T>;
 template<class T>
 bits(const T&) -> bits<const T>;
+
+#undef BITS_ENABLE_INTRINSICS
+#undef BITS_HAS_BUILTIN
+#undef BITS_HAS_BIT_CAST_INTRINSICS
+#undef BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#define BITS_COMPILER_INTRINSICS 1
 #include <bits.hpp>
 
 namespace {
