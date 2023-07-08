@@ -37,8 +37,7 @@ public:
 
 	explicit constexpr bits(Value& val) noexcept : m_value(val) {}
 
-	constexpr Value& value() { return m_value; }
-	constexpr const Value& value() const { return m_value; }
+	constexpr Value& value() const { return m_value; }
 
 private:
 	template<std::size_t> struct size_as_uint_t;

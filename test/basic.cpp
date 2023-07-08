@@ -21,6 +21,11 @@ TEST_F(basic, value_method) {
 	EXPECT_EQ(bits{value}.value(), value);
 	EXPECT_EQ(bits{const_value}.value(), const_value);
 	static_assert(bits{constexpr_value}.value() == constexpr_value);
+
+	const auto value_value = bits{value}.value();
+	EXPECT_EQ(value_value, value);
+	const auto const_value_value = bits{const_value}.value();
+	EXPECT_EQ(const_value_value, const_value);
 }
 
 TEST_F(basic, uint_method) {
