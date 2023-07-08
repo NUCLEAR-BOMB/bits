@@ -131,6 +131,12 @@ private:
 
 public:
 
+	constexpr auto uint() const {
+		static_assert(is_convertible_as_uint<value_type>, 
+			"can't be represented as an unsigned integer");
+		return bit_cast<type_as_uint<value_type>>(m_value);
+	}
+
 	template<class T>
 	constexpr bits& operator=(const T& other) {
 		static_assert(sizeof(value_type) == sizeof(T));

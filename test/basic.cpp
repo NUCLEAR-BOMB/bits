@@ -23,6 +23,15 @@ TEST_F(basic, value_method) {
 	static_assert(bits{constexpr_value}.value() == constexpr_value);
 }
 
+TEST_F(basic, uint_method) {
+	using type = decltype(bits{value}.uint());
+	static_assert(std::is_unsigned_v<type>);
+
+	EXPECT_EQ(bits{value}.uint(), value);
+	EXPECT_EQ(bits{const_value}.uint(), const_value);
+	static_assert(bits{constexpr_value}.uint() == constexpr_value);
+}
+
 TEST_F(basic, constructor_in_place) {
 	(void)bits{1};
 	(void)bits{1.f};
