@@ -137,6 +137,19 @@ public:
 		return bit_cast<type_as_uint<value_type>>(m_value);
 	}
 
+	template<class To, std::enable_if_t<!std::is_reference_v<To>, int> = 0>
+	constexpr To as() const {
+		static_assert(sizeof(To) == sizeof(value_type));
+		return bit_cast<To>(m_value);
+	}
+	template<class To, std::enable_if_t<std::is_reference_v<To>, int> = 0>
+	constexpr To as() {
+		static_assert(sizeof(To) == sizeof(value_type));
+		return reinterpret_cast<To&>(m_value);
+	}
+
+
+
 	template<class T>
 	constexpr bits& operator=(const T& other) {
 		static_assert(sizeof(value_type) == sizeof(T));
