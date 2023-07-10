@@ -1,5 +1,5 @@
 
-set(source basic.cpp operators.cpp)
+set(source basic.cpp operators.cpp test_types.hpp)
 
 add_executable("bits-test" ${source})
 target_compile_options("bits-test" PRIVATE 
@@ -8,9 +8,10 @@ $<IF:$<CXX_COMPILER_ID:MSVC>,
 	,
 	-Wall -Wextra -Wpedantic -Wconversion -Werror
 >)
+target_include_directories("bits-test" PRIVATE .)
 
 set_target_properties("bits-test" PROPERTIES
-    VS_GLOBAL_RunCodeAnalysis YES
+    VS_GLOBAL_RunCodeAnalysis NO
     VS_GLOBAL_EnableMicrosoftCodeAnalysis NO
     VS_GLOBAL_EnableClangTidyCodeAnalysis YES
 	CXX_CLANG_TIDY clang-tidy
