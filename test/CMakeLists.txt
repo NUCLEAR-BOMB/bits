@@ -4,7 +4,7 @@ set(source basic.cpp operators.cpp test_types.hpp)
 add_executable("bits-test" ${source})
 target_compile_options("bits-test" PRIVATE 
 $<IF:$<CXX_COMPILER_ID:MSVC>,
-	/Wall /WX /permissive- /Za /wd5264 /wd5262 /wd4625 /wd5026 /wd4626 /wd5027 /wd4820
+	/Wall /WX /permissive- /Za /wd5264 /wd5262 /wd4625 /wd5026 /wd4626 /wd5027 /wd4820 /wd4514
 	,
 	-Wall -Wextra -Wpedantic -Wconversion -Werror
 >)

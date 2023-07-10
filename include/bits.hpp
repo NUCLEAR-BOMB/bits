@@ -168,6 +168,13 @@ private:
 
 public:
 
+	template<class Byte = std::byte>
+	constexpr std::array<Byte, sizeof(value_type)> as_bytes() const {
+		static_assert(sizeof(Byte) == 1);
+		using byte_array = std::array<Byte, sizeof(value_type)>;
+		return bit_cast<byte_array>(m_value);
+	}
+
 	constexpr auto as_uint() const {
 		static_assert(is_convertible_as_uint<value_type>, 
 			"Can't be represented as an unsigned integer");
