@@ -85,4 +85,9 @@ TYPED_TEST(basic, as_bytes) {
 	EXPECT_EQ(bytes, std::get<sizeof(T)-1>(byte_arrays));
 }
 
+TYPED_TEST(basic, narrow_as) {
+	EXPECT_EQ(bits{this->value}.narrow().as<int>(), 1);
+	EXPECT_EQ(bits{this->value}.narrow().as<unsigned>(), 1);
+}
+
 }

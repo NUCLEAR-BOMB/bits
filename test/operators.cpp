@@ -21,6 +21,11 @@ TYPED_TEST(operators, assigment) {
 	EXPECT_EQ(this->value, 2);
 }
 
+TYPED_TEST(operators, narrow_assigment) {
+	bits{this->value}.narrow() = 2;
+	EXPECT_EQ(this->value, 2);
+}
+
 TYPED_TEST(operators, equal) {
 	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} == T(1));
