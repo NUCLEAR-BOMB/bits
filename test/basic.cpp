@@ -15,12 +15,16 @@ struct basic : ::testing::Test {
 	static constexpr T constexpr_value = 3;
 };
 
-TYPED_TEST_SUITE(basic, test_types,);
+TYPED_TEST_SUITE(basic, test_types, );
 
 TYPED_TEST(basic, constructor) {
-	(void)bits{this->value};
-	(void)bits{this->const_value};
-	static_assert(((void)bits{this->constexpr_value}, true));
+	(void)bits {
+	this->value
+};
+	(void)bits {
+		this->const_value
+	};
+	static_assert(((void)bits { this->constexpr_value }, true));
 }
 
 TYPED_TEST(basic, value_method) {
@@ -43,29 +47,33 @@ TYPED_TEST(basic, as_uint_method) {
 	static_assert(bits{this->constexpr_value}.as_uint() == this->constexpr_value);
 }
 
+
 TYPED_TEST(basic, as_method) {
 	using T = as_uint_t<TypeParam>;
-	EXPECT_EQ(bits{this->value}.as<T>(), T(this->value));
-	EXPECT_EQ(bits{this->const_value}.as<T>(), T(this->const_value));
-	static_assert(bits{this->constexpr_value}.as<T>() == T(this->constexpr_value));
+	EXPECT_EQ(bits{this->value}.template as<T>(), T(this->value));
+	EXPECT_EQ(bits{this->const_value}.template as<T>(), T(this->const_value));
+	static_assert(bits{this->constexpr_value}.template as<T>() == T(this->constexpr_value));
 	if constexpr (sizeof(T) == sizeof(float)) {
-		(void)bits{this->value}.as<float>();
+		(void)bits {
+		this->value
+	}.template as<float>();
 	}
 }
 
+
 TYPED_TEST(basic, reference_as_method) {
 	using T = as_uint_t<TypeParam>;
-	EXPECT_EQ(bits{this->value}.as<T&>(), T(this->value));
-	EXPECT_EQ(bits{this->value}.as<const T&>(), T(this->value));
-	EXPECT_EQ(bits{this->const_value}.as<const T&>(), T(this->const_value));
+	EXPECT_EQ(bits{this->value}.template as<T&>(), T(this->value));
+	EXPECT_EQ(bits{this->value}.template as<const T&>(), T(this->value));
+	EXPECT_EQ(bits{this->const_value}.template as<const T&>(), T(this->const_value));
 	
-	T& value_ref = bits{this->value}.as<T&>();
+	T& value_ref = bits{this->value}.template as<T&>();
 	value_ref = 10;
-	EXPECT_EQ(bits{this->value}.as<T>(), 10);
+	EXPECT_EQ(bits{this->value}.template as<T>(), 10);
 
-	const T& const_value_ref = bits{this->value}.as<const T&>();
+	const T& const_value_ref = bits{this->value}.template as<const T&>();
 	const_cast<T&>(const_value_ref) = 20;
-	EXPECT_EQ(bits{this->value}.as<T>(), 20);
+	EXPECT_EQ(bits{this->value}.template as<T>(), 20);
 }
 
 TYPED_TEST(basic, constructor_in_place) {
@@ -86,8 +94,8 @@ TYPED_TEST(basic, as_bytes) {
 }
 
 TYPED_TEST(basic, narrow_as) {
-	EXPECT_EQ(bits{this->value}.narrow().as<int>(), 1);
-	EXPECT_EQ(bits{this->value}.narrow().as<unsigned>(), 1);
+	EXPECT_EQ(bits{this->value}.narrow().template as<int>(), 1);
+	EXPECT_EQ(bits{this->value}.narrow().template as<unsigned>(), 1);
 }
 
 }
