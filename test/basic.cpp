@@ -6,6 +6,8 @@
 
 #include <test_types.hpp>
 
+#define TypeParam T
+
 namespace {
 
 template<class T>
@@ -48,30 +50,30 @@ TYPED_TEST(basic, as_uint_method) {
 
 
 TYPED_TEST(basic, as_method) {
-	using T = as_uint_t<TypeParam>;
-	EXPECT_EQ(bits{this->value}.template as<T>(), T(this->value));
-	EXPECT_EQ(bits{this->const_value}.template as<T>(), T(this->const_value));
-	constexpr auto compile_time_as = bits{this->constexpr_value}.template as<T>();
-	EXPECT_EQ(compile_time_as, T(this->constexpr_value));
-	if constexpr (sizeof(T) == sizeof(float)) {
+	using UInt = as_uint_t<T>;
+	EXPECT_EQ(bits{this->value}.template as<UInt>(), UInt(this->value));
+	EXPECT_EQ(bits{this->const_value}.template as<UInt>(), UInt(this->const_value));
+	constexpr auto compile_time_as = bits{this->constexpr_value}.template as<UInt>();
+	EXPECT_EQ(compile_time_as, UInt(this->constexpr_value));
+	if constexpr (sizeof(UInt) == sizeof(float)) {
 		(void)bits{this->value}.template as<float>();
 	}
 }
 
 
 TYPED_TEST(basic, reference_as_method) {
-	using T = as_uint_t<TypeParam>;
-	EXPECT_EQ(bits{this->value}.template as<T&>(), T(this->value));
-	EXPECT_EQ(bits{this->value}.template as<const T&>(), T(this->value));
-	EXPECT_EQ(bits{this->const_value}.template as<const T&>(), T(this->const_value));
+	using UInt = as_uint_t<T>;
+	EXPECT_EQ(bits{this->value}.template as<UInt&>(), UInt(this->value));
+	EXPECT_EQ(bits{this->value}.template as<const UInt&>(), UInt(this->value));
+	EXPECT_EQ(bits{this->const_value}.template as<const UInt&>(), UInt(this->const_value));
 	
-	T& value_ref = bits{this->value}.template as<T&>();
+	UInt& value_ref = bits{this->value}.template as<UInt&>();
 	value_ref = 10;
-	EXPECT_EQ(bits{this->value}.template as<T>(), 10);
+	EXPECT_EQ(bits{this->value}.template as<UInt>(), 10);
 
-	const T& const_value_ref = bits{this->value}.template as<const T&>();
-	const_cast<T&>(const_value_ref) = 20;
-	EXPECT_EQ(bits{this->value}.template as<T>(), 20);
+	const UInt& const_value_ref = bits{this->value}.template as<const UInt&>();
+	const_cast<UInt&>(const_value_ref) = 20;
+	EXPECT_EQ(bits{this->value}.template as<UInt>(), 20);
 }
 
 TYPED_TEST(basic, constructor_in_place) {

@@ -4,6 +4,8 @@
 
 #include <test_types.hpp>
 
+#define TypeParam T
+
 namespace {
 
 template<class T>
@@ -16,7 +18,6 @@ struct operators : ::testing::Test {
 TYPED_TEST_SUITE(operators, test_types,);
 
 TYPED_TEST(operators, assigment) {
-	using T = TypeParam;
 	bits{this->value} = T(2);
 	EXPECT_EQ(this->value, 2);
 }
@@ -27,7 +28,6 @@ TYPED_TEST(operators, narrow_assigment) {
 }
 
 TYPED_TEST(operators, equal) {
-	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} == T(1));
 	EXPECT_TRUE(bits{this->const_value} == T(2));
 	constexpr bool compile_time_equal_to_value = bits{this->constexpr_value} == T(3);
@@ -55,7 +55,6 @@ TYPED_TEST(operators, equal) {
 }
 
 TYPED_TEST(operators, not_equal) {
-	using T = TypeParam;
 	EXPECT_FALSE(bits{this->value} != T(1));
 	EXPECT_FALSE(bits{this->const_value} != T(2));
 	constexpr bool compile_time_not_equal_to_value = bits{this->constexpr_value} != T(3);
@@ -72,7 +71,6 @@ TYPED_TEST(operators, not_equal) {
 }
 
 TYPED_TEST(operators, greater) {
-	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} > T(0));
 	EXPECT_TRUE(bits{this->const_value} > T(1));
 	constexpr bool compile_time_gt_value = bits{this->constexpr_value} > T(2);
@@ -89,7 +87,6 @@ TYPED_TEST(operators, greater) {
 }
 
 TYPED_TEST(operators, greater_equal) {
-	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} >= T(1));
 	EXPECT_TRUE(bits{this->const_value} >= T(2));
 	constexpr bool compile_time_gteq_value = bits{this->constexpr_value} >= T(2);
@@ -106,7 +103,6 @@ TYPED_TEST(operators, greater_equal) {
 }
 
 TYPED_TEST(operators, less) {
-	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} < T(2));
 	EXPECT_TRUE(bits{this->const_value} < T(3));
 	constexpr bool compile_time_lt_value = bits{this->constexpr_value} < T(4);
@@ -123,7 +119,6 @@ TYPED_TEST(operators, less) {
 }
 
 TYPED_TEST(operators, less_equal) {
-	using T = TypeParam;
 	EXPECT_TRUE(bits{this->value} <= T(1));
 	EXPECT_TRUE(bits{this->const_value} <= T(2));
 	constexpr bool compile_time_lteq_value = bits{this->constexpr_value} <= T(4);
@@ -140,7 +135,6 @@ TYPED_TEST(operators, less_equal) {
 }
 
 TYPED_TEST(operators, addition_assignment) {
-	using T = TypeParam;
 	bits{this->value} += 1;
 	EXPECT_EQ(this->value, 2);
 	bits{this->value} += 100u;
@@ -162,7 +156,6 @@ TYPED_TEST(operators, addition_assignment) {
 }
 
 TYPED_TEST(operators, subtraction_assignment) {
-	using T = TypeParam;
 	bits{this->value} -= 1;
 	EXPECT_EQ(this->value, T(0));
 	bits{this->value} -= 100u;
@@ -184,13 +177,12 @@ TYPED_TEST(operators, subtraction_assignment) {
 }
 
 TYPED_TEST(operators, multiplication_assignment) {
-	using T = TypeParam;
 	bits{this->value} *= 2;
 	EXPECT_EQ(this->value, 2);
 	bits{this->value} *= 5u;
 	EXPECT_EQ(this->value, 10);
 	bits{this->value} *= -1;
-	EXPECT_EQ(this->value, TypeParam(-10));
+	EXPECT_EQ(this->value, T(-10));
 
 	constexpr bool compile_time_mul = [] {
 		T val = 10;
@@ -206,7 +198,6 @@ TYPED_TEST(operators, multiplication_assignment) {
 }
 
 TYPED_TEST(operators, division_assignment) {
-	using T = TypeParam;
 	bits{this->value} /= 2;
 	EXPECT_EQ(this->value, 0);
 	bits{this->value} = T(25);
@@ -231,7 +222,6 @@ TYPED_TEST(operators, division_assignment) {
 }
 
 TYPED_TEST(operators, remainder_assignment) {
-	using T = TypeParam;
 	bits{this->value} %= 10;
 	EXPECT_EQ(this->value, 1);
 	bits{this->value} %= -2;
@@ -255,7 +245,6 @@ TYPED_TEST(operators, remainder_assignment) {
 }
 
 TYPED_TEST(operators, bitwise_AND_assignment) {
-	using T = TypeParam;
 	bits{this->value} &= 0b0001;
 	EXPECT_EQ(this->value, 1);
 	bits{this->value} &= 0b0010;
@@ -282,7 +271,6 @@ TYPED_TEST(operators, bitwise_AND_assignment) {
 }
 
 TYPED_TEST(operators, bitwise_OR_assignment) {
-	using T = TypeParam;
 	bits{this->value} |= 0b0001;
 	EXPECT_EQ(this->value, 1);
 	bits{this->value} |= 0b1110u;
@@ -305,7 +293,6 @@ TYPED_TEST(operators, bitwise_OR_assignment) {
 }
 
 TYPED_TEST(operators, bitwise_XOR_assignment) {
-	using T = TypeParam;
 	bits{this->value} ^= 0b1111;
 	EXPECT_EQ(this->value, 14);
 	bits{this->value} ^= 0b1010u;
@@ -323,7 +310,6 @@ TYPED_TEST(operators, bitwise_XOR_assignment) {
 }
 
 TYPED_TEST(operators, bitwise_left_shift_assignment) {
-	using T = TypeParam;
 	bits{this->value} <<= 1;
 	EXPECT_EQ(this->value, 2);
 	bits{this->value} <<= 2u;
@@ -341,7 +327,6 @@ TYPED_TEST(operators, bitwise_left_shift_assignment) {
 }
 
 TYPED_TEST(operators, bitwise_right_shift_assignment) {
-	using T = TypeParam;
 	bits{this->value} >>= 1;
 	EXPECT_EQ(this->value, 0);
 	bits{this->value} = T(120);
