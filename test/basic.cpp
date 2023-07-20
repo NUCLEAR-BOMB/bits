@@ -18,19 +18,17 @@ struct basic : ::testing::Test {
 TYPED_TEST_SUITE(basic, test_types, );
 
 TYPED_TEST(basic, constructor) {
-	(void)bits {
-	this->value
-};
-	(void)bits {
-		this->const_value
-	};
-	static_assert(((void)bits { this->constexpr_value }, true));
+	(void)bits{this->value};
+	(void)bits{this->const_value};
+
+	static_assert(((void)bits{this->constexpr_value}, true));
 }
 
 TYPED_TEST(basic, value_method) {
 	EXPECT_EQ(bits{this->value}.value(), this->value);
 	EXPECT_EQ(bits{this->const_value}.value(), this->const_value);
-	static_assert(bits{this->constexpr_value}.value() == this->constexpr_value);
+	constexpr auto compile_time_value = bits{this->constexpr_value}.value();
+	EXPECT_EQ(compile_time_value, this->constexpr_value);
 
 	const auto value_value = bits{this->value}.value();
 	EXPECT_EQ(value_value, this->value);
@@ -44,7 +42,8 @@ TYPED_TEST(basic, as_uint_method) {
 
 	EXPECT_EQ(bits{this->value}.as_uint(), this->value);
 	EXPECT_EQ(bits{this->const_value}.as_uint(), this->const_value);
-	static_assert(bits{this->constexpr_value}.as_uint() == this->constexpr_value);
+	constexpr auto compile_time_uint = bits{this->constexpr_value}.as_uint();
+	EXPECT_EQ(compile_time_uint, this->constexpr_value);
 }
 
 
@@ -52,11 +51,10 @@ TYPED_TEST(basic, as_method) {
 	using T = as_uint_t<TypeParam>;
 	EXPECT_EQ(bits{this->value}.template as<T>(), T(this->value));
 	EXPECT_EQ(bits{this->const_value}.template as<T>(), T(this->const_value));
-	static_assert(bits{this->constexpr_value}.template as<T>() == T(this->constexpr_value));
+	constexpr auto compile_time_as = bits{this->constexpr_value}.template as<T>();
+	EXPECT_EQ(compile_time_as, T(this->constexpr_value));
 	if constexpr (sizeof(T) == sizeof(float)) {
-		(void)bits {
-		this->value
-	}.template as<float>();
+		(void)bits{this->value}.template as<float>();
 	}
 }
 
