@@ -138,12 +138,13 @@ TYPED_TEST(operators, addition_assignment) {
 }
 
 TYPED_TEST(operators, subtraction_assignment) {
+	using T = TypeParam;
 	bits{this->value} -= 1;
-	EXPECT_EQ(this->value, 0);
+	EXPECT_EQ(this->value, T(0));
 	bits{this->value} -= 100u;
-	EXPECT_EQ(this->value, -100);
+	EXPECT_EQ(this->value, T(-100));
 	bits{this->value} -= (-10);
-	EXPECT_EQ(this->value, -90);
+	EXPECT_EQ(this->value, T(-90));
 	bits{this->value} -= (-100);
 	EXPECT_EQ(this->value, 10);
 }
@@ -154,17 +155,18 @@ TYPED_TEST(operators, multiplication_assignment) {
 	bits{this->value} *= 5u;
 	EXPECT_EQ(this->value, 10);
 	bits{this->value} *= -1;
-	EXPECT_EQ(this->value, -10);
+	EXPECT_EQ(this->value, TypeParam(-10));
 }
 
 TYPED_TEST(operators, division_assignment) {
+	using T = TypeParam;
 	bits{this->value} /= 2;
 	EXPECT_EQ(this->value, 0);
-	bits{this->value} = TypeParam(25);
+	bits{this->value} = T(25);
 	bits{this->value} /= -5;
-	EXPECT_EQ(this->value, -5);
+	EXPECT_EQ(this->value, T(-5));
 	bits{this->value} /= 5;
-	EXPECT_EQ(this->value, -1);
+	EXPECT_EQ(this->value, T(-1));
 }
 
 TYPED_TEST(operators, remainder_assignment) {
