@@ -54,11 +54,11 @@ private:
 
 	template<std::size_t N>
 	static decltype(auto) size_as_uint_impl() {
-		if constexpr (N <= 1) return type_identity<std::uint8_t>{};
-		else if constexpr (N <= 2) return type_identity<std::uint16_t>{};
-		else if constexpr (N <= 4) return type_identity<std::uint32_t>{};
-		else if constexpr (N <= 8) return type_identity<std::uint64_t>{};
-		else return type_identity<void>{};
+		if constexpr (N <= 1) return std::uint8_t{};
+		else if constexpr (N <= 2) return std::uint16_t{};
+		else if constexpr (N <= 4) return std::uint32_t{};
+		else if constexpr (N <= 8) return std::uint64_t{};
+		else return void();
 	}
 
 #if defined(UINT64_MAX) && UINT64_MAX <= UINTMAX_MAX
@@ -68,7 +68,7 @@ private:
 #endif
 
 	template<std::size_t N>
-	using size_as_uint = typename decltype(size_as_uint_impl<N>())::type;
+	using size_as_uint = decltype(size_as_uint_impl<N>());
 	template<class T>
 	using type_as_uint = size_as_uint<sizeof(T)>;
 	template<class T>
@@ -107,7 +107,7 @@ private:
 		static_assert(sizeof(To) == sizeof(From));
 #ifdef __cpp_lib_bit_cast
 		return std::bit_cast<To>(from);
-#eliif BITS_HAS_BIT_CAST_INTRINSICS
+#elif BITS_HAS_BIT_CAST_INTRINSICS
 		return __builtin_bit_cast(To, from);
 #else
 		if constexpr (is_bit_convertible<From, To>) {
