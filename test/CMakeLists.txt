@@ -13,13 +13,13 @@ target_include_directories("bits-test" PRIVATE .)
 include(FetchContent)
 FetchContent_Declare(
     googletest
-    GIT_REPOSITORY https://github.com/google/googletest
-    GIT_TAG v1.13.0
+	URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
 	FIND_PACKAGE_ARGS NAMES GTest
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(BUILD_GMOCK NO CACHE INTERNAL "")
 set(INSTALL_GTEST NO CACHE INTERNAL "")
+set(ENV{GTEST_BRIEF} 1)
 
 FetchContent_MakeAvailable(googletest)
 
