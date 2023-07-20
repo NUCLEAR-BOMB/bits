@@ -10,13 +10,6 @@ $<IF:$<CXX_COMPILER_ID:MSVC>,
 >)
 target_include_directories("bits-test" PRIVATE .)
 
-set_target_properties("bits-test" PROPERTIES
-    VS_GLOBAL_RunCodeAnalysis NO
-    VS_GLOBAL_EnableMicrosoftCodeAnalysis NO
-    VS_GLOBAL_EnableClangTidyCodeAnalysis YES
-	CXX_CLANG_TIDY clang-tidy
-)
-
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -29,6 +22,16 @@ set(BUILD_GMOCK NO CACHE INTERNAL "")
 set(INSTALL_GTEST NO CACHE INTERNAL "")
 
 FetchContent_MakeAvailable(googletest)
+
+set_target_properties("bits-test" PROPERTIES
+	VS_GLOBAL_RunCodeAnalysis NO
+	VS_GLOBAL_EnableMicrosoftCodeAnalysis NO
+	VS_GLOBAL_EnableClangTidyCodeAnalysis YES
+	CXX_CLANG_TIDY "clang-tidy;--use-color"
+)
+
+set_target_properties(gtest PROPERTIES VS_GLOBAL_EnableMicrosoftCodeAnalysis NO)
+set_target_properties(gtest_main PROPERTIES VS_GLOBAL_EnableMicrosoftCodeAnalysis NO)
 
 target_link_libraries("bits-test" PRIVATE bits::bits GTest::gtest GTest::gtest_main)
 

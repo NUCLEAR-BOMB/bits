@@ -1,5 +1,17 @@
 
-Checks:
-  -clang-diagnostic-*compat*
-
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  clang-diagnostic-warning,
+  -readability-uppercase-literal-suffix,
+  -readability-magic-numbers,
+  -modernize-avoid-c-arrays,
+  -readability-identifier-length,
 WarningsAsErrors: '*'
