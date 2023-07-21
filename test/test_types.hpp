@@ -17,7 +17,9 @@ constexpr std::byte operator""_b(unsigned long long int x) {
 	return static_cast<std::byte>(x);
 }
 
-template<class First, class... Args>
-constexpr auto make_array(const First first, const Args... args) {
-	return std::array<First, sizeof...(Args)+1>{{first, args...}};
+template<class T>
+constexpr unsigned bit_width(T value) {
+	unsigned result = 0;
+	while (value >>= 1) ++result;
+	return result;
 }

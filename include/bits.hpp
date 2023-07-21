@@ -34,7 +34,7 @@
 	#define BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS 0
 #endif
 
-template<class Value = void>
+template<class Value>
 class bits {
 public:
 	using value_type = std::remove_const_t<Value>;
@@ -86,6 +86,20 @@ private:
 		const auto result = T(x & (~(x - 1)));
 		return result > sizeof(local_uintmax_t) ? sizeof(local_uintmax_t) : result;
 	}
+
+	template<class T>
+	static constexpr bool is_integer_array = false;
+	template<class T, std::size_t N>
+	static constexpr bool is_integer_array<std::array<T, N>> = std::is_integral_v<T> || std::is_enum_v<T>;
+	template<class T, std::size_t N>
+	static constexpr bool is_integer_array<T[N]> = std::is_integral_v<T> || std::is_enum_v<T>;
+
+
+	template<class T, std::size_t Size = denominator_of_power2(sizeof(T))>
+	using as_max_size_array = std::array<size_as_uint<Size>, sizeof(T) / Size>;
+
+	template<class T, class UIntMax = local_uintmax_t>
+	using as_least_uintmax_array = std::array<UIntMax, sizeof(T) / sizeof(UIntMax)>;
 
 	template<class T>
 	static constexpr decltype(auto) unwrap(const bits<T>& val) { return val.value(); }
@@ -170,9 +184,53 @@ private:
 			using uint_type = type_as_uint<T>;
 			return Fn{}(bit_cast<uint_type>(left), bit_cast<uint_type>(right));
 		} else {
-			constexpr std::size_t pow2_denom = denominator_of_power2(sizeof(T));
-			using as_array_type = std::array<size_as_uint<pow2_denom>, sizeof(T) / pow2_denom>;
+			using as_array_type = as_max_size_array<T>;
 			return Fn{}(bit_cast<as_array_type>(left), bit_cast<as_array_type>(right));
+		}
+	}
+
+	template<bool SetTo, class T>
+	static constexpr void bit_set(T& value) {
+		if constexpr (std::is_integral_v<T>) {
+			value = SetTo ? T(-1) : T(0);
+		} else if constexpr (is_integer_array<T>) {
+			for (auto& x : value) {
+				bit_set<SetTo>(x);
+			}
+		} else {
+			if (is_constant_evaluated()) {
+				using array_type = as_max_size_array<T>;
+				using array_uvalue_type = typename array_type::value_type;
+
+				auto value_as_arr = bit_cast<array_type>(value);
+				bit_set<SetTo>(value_as_arr);
+				value = bit_cast<T>(value_as_arr);
+				return;
+			}
+			std::memset(&value, SetTo ? 0xFF : 0, sizeof(T));
+		}
+	}
+	template<class T>
+	static constexpr void bit_flip(T& value) {
+		if constexpr (std::is_integral_v<T>) {
+			value = T(~value);
+		} else if constexpr (is_integer_array<T>) {
+			for (auto& x : value) {
+				bit_flip(x);
+			}
+		} else {
+			if constexpr (sizeof(T) >= sizeof(local_uintmax_t)) {
+				using first_type = as_least_uintmax_array<T>;
+				using rest_type = size_as_uint<sizeof(first_type) - sizeof(T)>;
+				bit_flip(reinterpret_cast<first_type&>(value));
+
+				std::byte* offset = reinterpret_cast<std::byte*>(&value) + sizeof(first_type);
+				bit_flip(*reinterpret_cast<rest_type*>(offset));
+			} else {
+				using uint_type = type_as_uint<T>;
+				const auto uint_value = bit_cast<uint_type>(value);
+				bit_cast_to(value, uint_type(~uint_value));
+			}
 		}
 	}
 
@@ -259,6 +317,16 @@ public:
 		static_assert(sizeof(value_type) == sizeof(T));
 		expand_bit_cast_to(m_value, other);
 		return *this;
+	}
+
+	constexpr void set() {
+		bit_set<true>(m_value);
+	}
+	constexpr void reset() {
+		bit_set<false>(m_value);
+	}
+	constexpr void flip() {
+		bit_flip(m_value);
 	}
 
 	template<class T>

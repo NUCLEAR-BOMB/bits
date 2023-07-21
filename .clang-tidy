@@ -16,4 +16,7 @@ Checks: >
   -readability-identifier-length,
   -modernize-use-trailing-return-type,
   -bugprone-exception-escape,
+  -readability-braces-around-statements,
+  -readability-simplify-boolean-expr,
+  -readability-function-cognitive-complexity,
 WarningsAsErrors: '*'
