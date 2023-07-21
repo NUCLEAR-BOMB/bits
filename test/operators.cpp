@@ -344,4 +344,52 @@ TYPED_TEST(operators, bitwise_right_shift_assignment) {
 	EXPECT_TRUE(compile_time_rshift);
 }
 
+TYPED_TEST(operators, subscript) {
+	EXPECT_TRUE(bits{this->value}[0]);
+	EXPECT_FALSE(bits{this->value}[1]);
+
+	EXPECT_FALSE(bits{this->const_value}[0]);
+	EXPECT_TRUE(bits{this->const_value}[1]);
+
+	EXPECT_TRUE(bits{this->constexpr_value}[0]);
+	EXPECT_TRUE(bits{this->constexpr_value}[1]);
+	EXPECT_FALSE(bits{this->constexpr_value}[2]);
+
+	EXPECT_TRUE(bits{this->value}[0].get());
+
+	bits{this->value}[0] = 0;
+	EXPECT_EQ(this->value, 0b0000);
+	bits{this->value}[1] = 0b0001;
+	EXPECT_EQ(this->value, 0b0010);
+	bits{this->value}[0] = 1;
+	EXPECT_EQ(this->value, 0b0011);
+	bits{this->value}[7] = 1;
+	EXPECT_EQ(this->value, T(0b1000'0011u));
+
+	std::array<T, 3> array{0b0111, 0b0010, 0b1000};
+	EXPECT_TRUE(bits{array}[0]);
+	EXPECT_FALSE(bits{array}[3]);
+
+	EXPECT_TRUE(bits{array}[CHAR_BIT*sizeof(T) + 1]);
+
+	bits{array}[4] = 1;
+	EXPECT_TRUE(bits{array}[4]);
+	bits{array}[CHAR_BIT*sizeof(T)*2 + 1] = 1;
+	EXPECT_TRUE(bits{array}[CHAR_BIT*sizeof(T)*2 + 1]);
+
+	EXPECT_TRUE(bits{array[1]}[1]);
+	bits{array[1]}[1] = 0;
+	EXPECT_FALSE(bits{array[1]}[1]);
+
+	constexpr bool compile_time_subscript = [] {
+		T val = 0b1000'0000u;
+		bits{val}[0] = 1;
+		if (val != T(0b1000'0001u)) return false;
+		if (bits{val}[0] != 1) return false;
+
+		return true;
+	}();
+	EXPECT_TRUE(compile_time_subscript);
+}
+
 }

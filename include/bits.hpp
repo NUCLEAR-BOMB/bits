@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
+#include <utility>
 
 #if __cplusplus >= 202002L
 #include <version>
@@ -99,12 +100,26 @@ private:
 	using as_max_size_array = std::array<size_as_uint<Size>, sizeof(T) / Size>;
 
 	template<class T, class UIntMax = local_uintmax_t>
-	using as_least_uintmax_array = std::array<UIntMax, sizeof(T) / sizeof(UIntMax)>;
+	using type_as_least_uintmax_array = std::array<UIntMax, sizeof(T) / sizeof(UIntMax)>;
+
+	using bitsize_t = local_uintmax_t;
+
+	template<class T>
+	using array_value_type = std::decay_t<decltype(std::declval<T&>()[std::size_t(0)])>;
 
 	template<class T>
 	static constexpr decltype(auto) unwrap(const bits<T>& val) { return val.value(); }
 	template<class T>
 	static constexpr decltype(auto) unwrap(const T& val) { return val; }
+
+	template<class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+	static constexpr std::underlying_type_t<T> unwrap_enum(const T e) {
+		return static_cast<std::underlying_type_t<T>>(e);
+	}
+	template<class T, std::enable_if_t<!std::is_enum_v<T>, int> = 0>
+	static constexpr T unwrap_enum(const T i) {
+		return i;
+	}
 
 	static constexpr bool is_constant_evaluated() {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -213,16 +228,16 @@ private:
 	template<class T>
 	static constexpr void bit_flip(T& value) {
 		if constexpr (std::is_integral_v<T>) {
-			value = T(~value);
+			value = T(~unwrap_enum(value));
 		} else if constexpr (is_integer_array<T>) {
 			for (auto& x : value) {
 				bit_flip(x);
 			}
 		} else {
 			if constexpr (sizeof(T) >= sizeof(local_uintmax_t)) {
-				using first_type = as_least_uintmax_array<T>;
+				using first_type = type_as_least_uintmax_array<T>;
 				using rest_type = size_as_uint<sizeof(first_type) - sizeof(T)>;
-				bit_flip(reinterpret_cast<first_type&>(value));
+				bit_flip(*reinterpret_cast<first_type*>(&value));
 
 				std::byte* offset = reinterpret_cast<std::byte*>(&value) + sizeof(first_type);
 				bit_flip(*reinterpret_cast<rest_type*>(offset));
@@ -231,6 +246,42 @@ private:
 				const auto uint_value = bit_cast<uint_type>(value);
 				bit_cast_to(value, uint_type(~uint_value));
 			}
+		}
+	}
+
+	template<class T>
+	static constexpr void bit_assign(T& value, const bitsize_t index, const bool what_value) {
+		if constexpr (std::is_integral_v<T>) {
+			value &= ~(T(1) << index);
+			value |= T(what_value) << index;
+		} else if constexpr (is_integer_array<T>) {
+			using elem_type = array_value_type<T>;
+			const auto array_index = index / (CHAR_BIT*sizeof(elem_type));
+			const auto bit_index = index % (CHAR_BIT*sizeof(elem_type));
+			bit_assign(value[array_index], bit_index, what_value);
+		} else {
+			using byte_array = std::array<std::byte, sizeof(T)>;
+			if (is_constant_evaluated() && std::is_trivially_copy_assignable_v<T>) {
+				auto buffer = bit_cast<byte_array>(value);
+				bit_assign(buffer, index, what_value);
+				value = bit_cast<T>(buffer);
+				return;
+			}
+			bit_assign(reinterpret_cast<byte_array&>(value), index, what_value);
+		}
+	}
+	template<class T>
+	static constexpr bool bit_get(const T& value, const bitsize_t index) {
+		if constexpr (std::is_integral_v<T>) {
+			return (unwrap_enum(value) & (T(1) << index)) > 0;
+		} else if constexpr (is_integer_array<T>) {
+			using elem_type = array_value_type<T>;
+			const auto array_index = index / (CHAR_BIT*sizeof(elem_type));
+			const auto bit_index = index % (CHAR_BIT*sizeof(elem_type));
+			return bit_get(value[array_index], bit_index);
+		} else {
+			using byte_array = std::array<std::byte, sizeof(T)>;
+			return bit_get(bit_cast<byte_array>(value), index);
 		}
 	}
 
@@ -407,6 +458,27 @@ public:
 			"The size of the operands is not equal to");
 		return bit_compare<std::less_equal<>>(unwrap(left), unwrap(right));
 	}
+
+	class reference {
+	public:
+		constexpr reference(const bitsize_t index, Value& value) : index(index), value(value) {}
+
+		constexpr reference& operator=(const bool x) {
+			bit_assign(value, index, x);
+			return *this;
+		}
+		constexpr bool get() const { return bit_get(value, index); }
+		constexpr operator bool() const { return get(); }
+
+	private:
+		const bitsize_t index;
+		Value& value;
+	};
+
+	constexpr reference operator[](const bitsize_t index) {
+		return reference(index, m_value);
+	}
+	
 
 
 private:
