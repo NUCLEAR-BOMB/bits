@@ -75,12 +75,22 @@ private:
 	template<class T>
 	using type_as_int = std::make_signed_t<type_as_uint<T>>;
 
+	template<class T, bool = std::is_enum_v<T>>
+	struct safe_underlying_type_impl { using type = std::underlying_type_t<T>; };
+	template<class T>
+	struct safe_underlying_type_impl<T, false> { using type = T; };
+
+	template<class T>
+	using safe_underlying_type = typename safe_underlying_type_impl<T>::type;
+
+	template<class T>
+	static constexpr bool is_like_integral = std::is_integral_v<T> || std::is_enum_v<T>;
+
 	template<class T>
 	static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(local_uintmax_t));
 
 	template<class From, class To>
-	static constexpr bool is_bit_convertible =
-		(std::is_integral_v<To> || std::is_enum_v<To>) && (std::is_integral_v<From> || std::is_enum_v<From>);
+	static constexpr bool is_bit_convertible = is_like_integral<From> && is_like_integral<To>;
 
 	template<class T>
 	static constexpr T denominator_of_power2(const T x) {
@@ -111,15 +121,6 @@ private:
 	static constexpr decltype(auto) unwrap(const bits<T>& val) { return val.value(); }
 	template<class T>
 	static constexpr decltype(auto) unwrap(const T& val) { return val; }
-
-	template<class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-	static constexpr std::underlying_type_t<T> unwrap_enum(const T e) {
-		return static_cast<std::underlying_type_t<T>>(e);
-	}
-	template<class T, std::enable_if_t<!std::is_enum_v<T>, int> = 0>
-	static constexpr T unwrap_enum(const T i) {
-		return i;
-	}
 
 	static constexpr bool is_constant_evaluated() {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -193,7 +194,7 @@ private:
 	static constexpr bool bit_compare(const Left& left, const Right& right) {
 		static_assert(sizeof(Left) == sizeof(Right));
 		using T = Left;
-		if constexpr (std::is_integral_v<Left> && std::is_integral_v<Right>) {
+		if constexpr (is_like_integral<Left> && is_like_integral<Right>) {
 			return Fn{}(type_as_uint<Left>(left), type_as_uint<Right>(right));
 		} else if constexpr (is_convertible_as_uint<T>) {
 			using uint_type = type_as_uint<T>;
@@ -227,8 +228,9 @@ private:
 	}
 	template<class T>
 	static constexpr void bit_flip(T& value) {
-		if constexpr (std::is_integral_v<T>) {
-			value = T(~unwrap_enum(value));
+		if constexpr (is_like_integral<T>) {
+			using integer_t = safe_underlying_type<T>;
+			value = T(~integer_t(value));
 		} else if constexpr (is_integer_array<T>) {
 			for (auto& x : value) {
 				bit_flip(x);
@@ -254,6 +256,10 @@ private:
 		if constexpr (std::is_integral_v<T>) {
 			value &= ~(T(1) << index);
 			value |= T(what_value) << index;
+		} else if constexpr (std::is_enum_v<T>) {
+			auto buffer = static_cast<std::underlying_type_t<T>>(value);
+			bit_assign(buffer, index, what_value);
+			value = static_cast<T>(buffer);
 		} else if constexpr (is_integer_array<T>) {
 			using elem_type = array_value_type<T>;
 			const auto array_index = index / (CHAR_BIT*sizeof(elem_type));
@@ -272,8 +278,9 @@ private:
 	}
 	template<class T>
 	static constexpr bool bit_get(const T& value, const bitsize_t index) {
-		if constexpr (std::is_integral_v<T>) {
-			return (unwrap_enum(value) & (T(1) << index)) > 0;
+		if constexpr (is_like_integral<T>) {
+			using integer_t = safe_underlying_type<T>;
+			return (integer_t(value) & (integer_t(1) << index)) > 0;
 		} else if constexpr (is_integer_array<T>) {
 			using elem_type = array_value_type<T>;
 			const auto array_index = index / (CHAR_BIT*sizeof(elem_type));

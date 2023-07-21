@@ -12,9 +12,9 @@ namespace {
 
 template<class T>
 struct basic : ::testing::Test {
-	T value{1};
-	const T const_value = 2;
-	static constexpr T constexpr_value = 3;
+	T value = T(1);
+	const T const_value = T(2);
+	static constexpr T constexpr_value = T(3);
 };
 
 TYPED_TEST_SUITE(basic, test_types, );
@@ -42,10 +42,10 @@ TYPED_TEST(basic, as_uint_method) {
 	using type = decltype(bits{this->value}.as_uint());
 	static_assert(std::is_unsigned_v<type>);
 
-	EXPECT_EQ(bits{this->value}.as_uint(), this->value);
-	EXPECT_EQ(bits{this->const_value}.as_uint(), this->const_value);
+	EXPECT_EQ(T(bits{this->value}.as_uint()), this->value);
+	EXPECT_EQ(T(bits{this->const_value}.as_uint()), this->const_value);
 	constexpr auto compile_time_uint = bits{this->constexpr_value}.as_uint();
-	EXPECT_EQ(compile_time_uint, this->constexpr_value);
+	EXPECT_EQ(T(compile_time_uint), this->constexpr_value);
 }
 
 
@@ -101,20 +101,20 @@ TYPED_TEST(basic, set) {
 	bits{this->value}.set();
 	EXPECT_EQ(this->value, T(-1));
 	constexpr bool compile_time_set = [] {
-		T val = 2;
+		T val = T(2);
 		bits{val}.set();
 		if (val != T(-1)) return false;
 		return true;
 	}();
 	EXPECT_TRUE(compile_time_set);
 
-	std::array<T, 4> array{1, 2, 0, 4};
+	auto array = weak_make_array<T, 4>(1, 2, 0, 4);
 	bits{array}.set();
 
-	constexpr std::array<T, 4> expected_array{T(-1), T(-1), T(-1), T(-1)};
+	constexpr auto expected_array = weak_make_array<T, 4>(-1, -1, -1, -1);
 	EXPECT_EQ(array, expected_array);
 
-	T c_array[4]{1, 20, 30, 40};
+	T c_array[4]{T(1), T(20), T(30), T(40)};
 	bits{c_array}.set();
 
 	EXPECT_EQ(bits{c_array}, expected_array);
@@ -122,46 +122,54 @@ TYPED_TEST(basic, set) {
 
 TYPED_TEST(basic, reset) {
 	bits{this->value}.reset();
-	EXPECT_EQ(this->value, 0);
+	EXPECT_EQ(this->value, T(0));
 	constexpr bool compile_time_reset = [] {
-		T val = 100;
+		T val = T(100);
 		bits{val}.reset();
-		if (val != 0) return false;
+		if (val != T(0)) return false;
 		return true;
 	}();
 	EXPECT_TRUE(compile_time_reset);
 
-	std::array<T, 4> array{0, 100, 50, 25};
+	auto array = weak_make_array<T, 4>(0, 100, 50, 25);
 	bits{array}.reset();
 
-	constexpr std::array<T, 4> expected_array{0, 0, 0, 0};
+	constexpr auto expected_array = weak_make_array<T, 4>(0, 0, 0, 0);
 	EXPECT_EQ(array, expected_array);
 }
 
 TYPED_TEST(basic, flip) {
+	using u_t = safe_underlying_type<T>;
+
 	bits{this->value}.flip();
-	EXPECT_EQ(this->value, T(-1) - 1);
+	EXPECT_EQ(this->value, T(u_t(-1) - 1));
 	bits{this->value}.flip();
-	EXPECT_EQ(this->value, 1);
+	EXPECT_EQ(this->value, T(1));
 
 	constexpr bool compile_time_flip = [] {
-		T val = 0b1010'1010u;
+		T val = T(0b1010'1010u);
 		bits{val}.flip();
-		if (val != 0b0101'0101 - sizeof(T) == 1 ? 0 : 1 << 8) return false;
+		if (val != T(u_t(0b0101'0101) - u_t(sizeof(T) == 1 ? 0u : 1u << 8))) return false;
 		return true;
 	}();
 	EXPECT_TRUE(compile_time_flip);
 
-	std::array<T, 4> array{2, 3, 5, 7};
+	std::array<T, 4> array{T(2), T(3), T(5), T(7)};
 	bits{array}.flip();
 
-	constexpr std::array<T, 4> expected_array{T(-1)-2, T(-1)-3, T(-1)-5, T(-1)-7};
+	using u_t = safe_underlying_type<T>;
+	
+	constexpr std::array<T, 4> expected_array{
+		T(u_t(-1)-2), T(u_t(-1)-3), T(u_t(-1)-5), T(u_t(-1)-7)
+	};
 	EXPECT_EQ(array, expected_array);
 
-	T c_array[4]{15, 30, 56, 96};
+	T c_array[4]{T(15), T(30), T(56), T(96)};
 	bits{c_array}.flip();
 
-	constexpr std::array<T, 4> expected_c_array{T(-1)-15, T(-1)-30, T(-1)-56, T(-1)-96};
+	constexpr std::array<T, 4> expected_c_array{
+		T(u_t(-1)-15), T(u_t(-1)-30), T(u_t(-1)-56), T(u_t(-1)-96)
+	};
 	EXPECT_EQ(bits{c_array}, expected_c_array);
 }
 
