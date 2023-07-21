@@ -173,4 +173,20 @@ TYPED_TEST(basic, flip) {
 	EXPECT_EQ(bits{c_array}, expected_c_array);
 }
 
+TYPED_TEST(basic, flip_at) {
+	bits{this->value}.flip_at(0);
+	EXPECT_EQ(this->value, T(0));
+
+	bits{this->value}.flip_at(2);
+	EXPECT_EQ(this->value, T(4));
+	bits{this->value}.flip_at(2);
+	EXPECT_EQ(this->value, T(0));
+
+	auto array = weak_make_array<T, 2>(0b1001, 0b0110);
+	bits{array}.flip_at(0);
+	EXPECT_EQ(array[0], T(0b1000));
+	bits{array[1]}.flip_at(1);
+	EXPECT_EQ(array[1], T(0b0100));
+}
+
 }

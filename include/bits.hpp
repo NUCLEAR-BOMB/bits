@@ -250,6 +250,24 @@ private:
 			}
 		}
 	}
+	template<class T>
+	static constexpr void bit_flip_at(T& value, const bitsize_t index) {
+		if constexpr (std::is_integral_v<T>) {
+			value ^= T(1) << index;
+		} else if constexpr (std::is_enum_v<T>) {
+			auto buffer = static_cast<std::underlying_type_t<T>>(value);
+			bit_flip_at(buffer, index);
+			value = static_cast<T>(buffer);
+		} else if constexpr (is_integer_array<T>) {
+			using elem_type = array_value_type<T>;
+			const auto array_index = index / (CHAR_BIT*sizeof(elem_type));
+			const auto bit_index = index % (CHAR_BIT*sizeof(elem_type));
+			bit_flip_at(value[array_index], bit_index);
+		} else {
+			using byte_array = std::array<std::byte, sizeof(T)>;
+			bit_flip_at(reinterpret_cast<byte_array&>(value), index);
+		}
+	}
 
 	template<class T>
 	static constexpr void bit_assign(T& value, const bitsize_t index, const bool what_value) {
@@ -386,6 +404,9 @@ public:
 	constexpr void flip() {
 		bit_flip(m_value);
 	}
+	constexpr void flip_at(const bitsize_t index) {
+		bit_flip_at(m_value, index);
+	}
 
 	template<class T>
 	constexpr bits& operator+=(const T& x) {
@@ -476,6 +497,10 @@ public:
 		}
 		constexpr bool get() const { return bit_get(value, index); }
 		constexpr operator bool() const { return get(); }
+
+		constexpr void flip() {
+			bit_flip_at(value, index);
+		}
 
 	private:
 		const bitsize_t index;
