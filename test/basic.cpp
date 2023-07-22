@@ -228,4 +228,25 @@ TEST(non_template_basic, copy) {
 	EXPECT_NE(&copy_of_non_copyable.value, &non_copyable.value);
 }
 
+TEST(non_template_basic, as_refw) {
+	struct value_t {
+		int v = -2;
+	} value;
+	auto ref_wrapper = bits{value}.as_refw<unsigned>();
+	EXPECT_EQ(ref_wrapper, unsigned(-2));
+
+	ref_wrapper = 2u;
+	EXPECT_EQ(value.v, 2);
+
+	constexpr bool compile_time_as_refw = [] {
+		int value = 12222;
+		auto refw = bits{value}.as_refw<unsigned>();
+		if (refw != 12222) return false;
+		refw = 2u;
+		if (value != 2) return false;
+		return true;
+	}();
+	EXPECT_TRUE(compile_time_as_refw);
+}
+
 }

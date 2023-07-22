@@ -388,6 +388,36 @@ private:
 		}
 	};
 
+	template<class RefTo>
+	class ref_wrapper {
+	public:
+		constexpr ref_wrapper(Value& value) : value(value) {}
+
+		template<class T>
+		constexpr ref_wrapper& operator=(T&& other) {
+			if constexpr (std::is_trivially_assignable_v<RefTo, T>) {
+				bit_cast_to(value, other);
+			} else {
+				RefTo buffer = get();
+				buffer = std::forward<T>(other);
+				bit_cast_to(value, buffer);
+			}
+			return *this;
+		}
+		constexpr RefTo get() const { 
+			return bit_cast<RefTo>(value); 
+		}
+		constexpr operator RefTo() const { return get(); }
+
+		template<class... Args>
+		constexpr decltype(auto) operator()(Args&&... args) const {
+			return std::invoke(get(), std::forward<Args>(args)...);
+		}
+
+	private:
+		Value& value;
+	};
+
 public:
 
 	[[nodiscard]] constexpr narrow_t narrow() {
@@ -427,6 +457,11 @@ public:
 	[[nodiscard]] constexpr To as() {
 		static_assert(sizeof(To) == sizeof(value_type));
 		return reinterpret_cast<To&>(m_value);
+	}
+
+	template<class RefTo>
+	[[nodiscard]] constexpr ref_wrapper<RefTo> as_refw() {
+		return ref_wrapper<RefTo>(m_value);
 	}
 
 	template<class T>
