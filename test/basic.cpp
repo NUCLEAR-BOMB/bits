@@ -85,11 +85,8 @@ TYPED_TEST(basic, as_bytes) {
 	constexpr struct {} skip{};
 	const auto bytes = bits{this->value}.as_bytes();
 	
-	constexpr std::tuple table{
-		std::array{1_b}, std::array{1_b, 0_b}, std::array{1_b, 0_b, 0_b, 0_b},
-		std::array{1_b, 0_b, 0_b, 0_b, 0_b, 0_b, 0_b, 0_b}
-	};
-	EXPECT_EQ(bytes, std::get<bit_width(sizeof(T))>(table));
+	const std::array<std::uint8_t, sizeof(T)> cmp_to{1};
+	EXPECT_EQ(bytes, cmp_to);
 }
 
 TYPED_TEST(basic, narrow_as) {
@@ -211,6 +208,12 @@ TYPED_TEST(basic, copy_to) {
 	std::array<char, sizeof(T)> result_to_copy;
 	bits{this->value}.copy_to(result_to_copy);
 	EXPECT_EQ(result_to_copy[0], 1);
+}
+
+TYPED_TEST(basic, as_bytes_ref) {
+	auto& bytes = bits{this->value}.as_bytes_ref();
+	bytes[0] = 10;
+	EXPECT_EQ(this->value, T(10));
 }
 
 TEST(non_template_basic, copy) {

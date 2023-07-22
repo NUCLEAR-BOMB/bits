@@ -23,10 +23,6 @@ using test_types = ::testing::Types<
 template<class T>
 using as_uint_t = std::make_unsigned_t<T>;
 
-constexpr std::byte operator""_b(unsigned long long int x) {
-	return static_cast<std::byte>(x);
-}
-
 template<class T>
 constexpr unsigned bit_width(T value) {
 	unsigned result = 0;

@@ -394,11 +394,17 @@ public:
 		return narrow_t(m_value);
 	}
 
-	template<class Byte = std::byte>
-	[[nodiscard]] constexpr std::array<Byte, sizeof(value_type)> as_bytes() const {
-		static_assert(sizeof(Byte) == 1);
-		using byte_array = std::array<Byte, sizeof(value_type)>;
+	template<class Byte = std::uint_least8_t>
+	[[nodiscard]] constexpr auto as_bytes() const {
+		static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
+		using byte_array = std::array<Byte, sizeof(value_type) / sizeof(std::uint_least8_t)>;
 		return bit_cast<byte_array>(m_value);
+	}
+	template<class Byte = std::uint_least8_t>
+	[[nodiscard]] constexpr auto& as_bytes_ref() {
+		static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
+		using byte_array = std::array<Byte, sizeof(value_type) / sizeof(std::uint_least8_t)>;
+		return as<byte_array&>();
 	}
 
 	[[nodiscard]] constexpr auto as_uint() const {
@@ -447,10 +453,8 @@ public:
 		return bit_test_all(m_value);
 	}
 
-	template<class Result = value_type>
-	[[nodiscard]] constexpr Result copy() const {
-		static_assert(std::is_same_v<Result, value_type>);
-		return bit_cast<Result>(m_value);
+	[[nodiscard]] constexpr auto copy() const {
+		return bit_cast<value_type>(m_value);
 	}
 	template<class To>
 	constexpr void copy_to(To& to) {
