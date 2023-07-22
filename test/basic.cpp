@@ -16,29 +16,31 @@ struct basic : ::testing::Test {
 	const T const_value = T(2);
 	static constexpr T constexpr_value = T(3);
 };
+using int_basic = basic<int>;
 
 TYPED_TEST_SUITE(basic, test_types, );
 
-TYPED_TEST(basic, constructor) {
-	(void)bits{this->value};
-	(void)bits{this->const_value};
+TEST_F(int_basic, constructor) {
+	(void)bits{value};
+	(void)bits{const_value};
+	static_assert(((void)bits{constexpr_value}, true));
 
-	static_assert(((void)bits{this->constexpr_value}, true));
+	(void)bits{1};
+	(void)bits{1.f};
+
+	static_assert(((void)bits{1}, true));
 }
 
-TYPED_TEST(basic, value_method) {
-	EXPECT_EQ(bits{this->value}.value(), this->value);
-	EXPECT_EQ(bits{this->const_value}.value(), this->const_value);
-	constexpr auto compile_time_value = bits{this->constexpr_value}.value();
-	EXPECT_EQ(compile_time_value, this->constexpr_value);
+TEST_F(int_basic, value) {
+	EXPECT_EQ(bits{value}.value(), value);
+	EXPECT_EQ(bits{const_value}.value(), const_value);
+	constexpr auto compile_time_value = bits{constexpr_value}.value();
+	EXPECT_EQ(compile_time_value, constexpr_value);
 
-	const auto value_value = bits{this->value}.value();
-	EXPECT_EQ(value_value, this->value);
-	const auto const_value_value = bits{this->const_value}.value();
-	EXPECT_EQ(const_value_value, this->const_value);
+	EXPECT_EQ(&bits{value}.value(), &value);
 }
 
-TYPED_TEST(basic, as_uint_method) {
+TYPED_TEST(basic, as_uint) {
 	using type = decltype(bits{this->value}.as_uint());
 	static_assert(std::is_unsigned_v<type>);
 
@@ -49,7 +51,7 @@ TYPED_TEST(basic, as_uint_method) {
 }
 
 
-TYPED_TEST(basic, as_method) {
+TYPED_TEST(basic, as) {
 	using UInt = as_uint_t<T>;
 	EXPECT_EQ(bits{this->value}.template as<UInt>(), UInt(this->value));
 	EXPECT_EQ(bits{this->const_value}.template as<UInt>(), UInt(this->const_value));
@@ -61,7 +63,7 @@ TYPED_TEST(basic, as_method) {
 }
 
 
-TYPED_TEST(basic, reference_as_method) {
+TYPED_TEST(basic, as_ref) {
 	using UInt = as_uint_t<T>;
 	EXPECT_EQ(bits{this->value}.template as_ref<UInt>(), UInt(this->value));
 	EXPECT_EQ(bits{this->value}.template as_ref<const UInt>(), UInt(this->value));
@@ -74,11 +76,6 @@ TYPED_TEST(basic, reference_as_method) {
 	const UInt& const_value_ref = bits{this->value}.template as_ref<const UInt>();
 	const_cast<UInt&>(const_value_ref) = 20;
 	EXPECT_EQ(bits{this->value}.template as<UInt>(), 20);
-}
-
-TYPED_TEST(basic, constructor_in_place) {
-	(void)bits{this->value};
-	(void)bits{1.f};
 }
 
 TYPED_TEST(basic, as_bytes) {
@@ -216,7 +213,7 @@ TYPED_TEST(basic, as_bytes_ref) {
 	EXPECT_EQ(this->value, T(10));
 }
 
-TEST(non_template_basic, copy) {
+TEST_F(int_basic, copy) {
 	struct non_copyable_t {
 		int value = 123;
 		non_copyable_t(const non_copyable_t&) = delete;
@@ -228,15 +225,15 @@ TEST(non_template_basic, copy) {
 	EXPECT_NE(&copy_of_non_copyable.value, &non_copyable.value);
 }
 
-TEST(non_template_basic, as_refw) {
-	struct value_t {
+TEST_F(int_basic, as_refw) {
+	struct struct_value_t {
 		int v = -2;
-	} value;
-	auto ref_wrapper = bits{value}.as_refw<unsigned>();
+	} struct_value;
+	auto ref_wrapper = bits{struct_value}.as_refw<unsigned>();
 	EXPECT_EQ(ref_wrapper, unsigned(-2));
 
 	ref_wrapper = 2u;
-	EXPECT_EQ(value.v, 2);
+	EXPECT_EQ(struct_value.v, 2);
 
 	constexpr bool compile_time_as_refw = [] {
 		int value = 12222;
