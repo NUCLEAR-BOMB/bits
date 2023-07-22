@@ -63,15 +63,15 @@ TYPED_TEST(basic, as_method) {
 
 TYPED_TEST(basic, reference_as_method) {
 	using UInt = as_uint_t<T>;
-	EXPECT_EQ(bits{this->value}.template as<UInt&>(), UInt(this->value));
-	EXPECT_EQ(bits{this->value}.template as<const UInt&>(), UInt(this->value));
-	EXPECT_EQ(bits{this->const_value}.template as<const UInt&>(), UInt(this->const_value));
+	EXPECT_EQ(bits{this->value}.template as_ref<UInt>(), UInt(this->value));
+	EXPECT_EQ(bits{this->value}.template as_ref<const UInt>(), UInt(this->value));
+	EXPECT_EQ(bits{this->const_value}.template as_ref<const UInt>(), UInt(this->const_value));
 	
-	UInt& value_ref = bits{this->value}.template as<UInt&>();
+	UInt& value_ref = bits{this->value}.template as_ref<UInt>();
 	value_ref = 10;
 	EXPECT_EQ(bits{this->value}.template as<UInt>(), 10);
 
-	const UInt& const_value_ref = bits{this->value}.template as<const UInt&>();
+	const UInt& const_value_ref = bits{this->value}.template as_ref<const UInt>();
 	const_cast<UInt&>(const_value_ref) = 20;
 	EXPECT_EQ(bits{this->value}.template as<UInt>(), 20);
 }
@@ -223,7 +223,7 @@ TEST(non_template_basic, copy) {
 		non_copyable_t& operator=(const non_copyable_t&) = delete;
 	} non_copyable{};
 
-	non_copyable_t copy_of_non_copyable = bits{non_copyable}.copy();
+	const non_copyable_t copy_of_non_copyable = bits{non_copyable}.copy();
 	EXPECT_EQ(copy_of_non_copyable.value, 123);
 	EXPECT_NE(&copy_of_non_copyable.value, &non_copyable.value);
 }

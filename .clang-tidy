@@ -19,4 +19,5 @@ Checks: >
   -readability-braces-around-statements,
   -readability-simplify-boolean-expr,
   -readability-function-cognitive-complexity,
+  -misc-non-private-member-variables-in-classes,
 WarningsAsErrors: '*'

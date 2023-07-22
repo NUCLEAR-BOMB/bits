@@ -434,7 +434,7 @@ public:
 	[[nodiscard]] constexpr auto& as_bytes_ref() {
 		static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
 		using byte_array = std::array<Byte, sizeof(value_type) / sizeof(std::uint_least8_t)>;
-		return as<byte_array&>();
+		return as_ref<byte_array>();
 	}
 
 	[[nodiscard]] constexpr auto as_uint() const {
@@ -448,14 +448,17 @@ public:
 		return bit_cast<type_as_int<value_type>>(m_value);
 	}
 
-	template<class To, std::enable_if_t<!std::is_reference_v<To>, int> = 0>
+	template<class To>
 	[[nodiscard]] constexpr To as() const {
 		static_assert(sizeof(To) == sizeof(value_type));
+		static_assert(!std::is_reference_v<To>);
 		return bit_cast<To>(m_value);
 	}
-	template<class To, std::enable_if_t<std::is_reference_v<To>, int> = 0>
-	[[nodiscard]] constexpr To as() {
+
+	template<class To>
+	[[nodiscard]] constexpr To& as_ref() {
 		static_assert(sizeof(To) == sizeof(value_type));
+		static_assert(!std::is_reference_v<To>);
 		return reinterpret_cast<To&>(m_value);
 	}
 
