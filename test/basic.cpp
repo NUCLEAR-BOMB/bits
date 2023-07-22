@@ -246,4 +246,14 @@ TEST_F(int_basic, as_refw) {
 	EXPECT_TRUE(compile_time_as_refw);
 }
 
+TEST_F(int_basic, as_array) {
+	const auto arr = bits{value}.as_array<short>();
+	constexpr std::array<short, 2> cmp_arr{1, 0};
+	EXPECT_EQ(arr, cmp_arr);
+
+	const auto char_arr = bits{const_value}.as_array<char>();
+	constexpr std::array<char, 4> cmp_char_arr{2, 0, 0, 0};
+	EXPECT_EQ(char_arr, cmp_char_arr);
+}
+
 }

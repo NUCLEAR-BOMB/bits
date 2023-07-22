@@ -448,6 +448,14 @@ public:
 		return bit_cast<type_as_int<value_type>>(m_value);
 	}
 
+	template<class ArrayType>
+	[[nodiscard]] constexpr auto as_array() const {
+		static_assert(sizeof(value_type) % sizeof(ArrayType) == 0,
+			"Array type must be a divisible of size of the value_type");
+		using array_type = std::array<ArrayType, sizeof(value_type) / sizeof(ArrayType)>;
+		return as<array_type>();
+	}
+
 	template<class To>
 	[[nodiscard]] constexpr To as() const {
 		static_assert(sizeof(To) == sizeof(value_type));
