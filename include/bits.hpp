@@ -447,6 +447,18 @@ public:
 		return bit_test_all(m_value);
 	}
 
+	template<class Result = value_type>
+	[[nodiscard]] constexpr Result copy() const {
+		static_assert(std::is_same_v<Result, value_type>);
+		return bit_cast<Result>(m_value);
+	}
+	template<class To>
+	constexpr void copy_to(To& to) {
+		static_assert(sizeof(To) == sizeof(value_type));
+		bit_cast_to(to, m_value);
+	}
+	template<class To> constexpr void copy_to(const To&) = delete;
+
 	template<class T>
 	constexpr bits& operator+=(const T& x) {
 		return narrow_assign_integer(as_integer_sign_of<T>() + x);

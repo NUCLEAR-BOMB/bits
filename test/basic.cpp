@@ -207,4 +207,22 @@ TYPED_TEST(basic, all) {
 	EXPECT_TRUE(bits{this->value}.all());
 }
 
+TYPED_TEST(basic, copy_to) {
+	std::array<char, sizeof(T)> result_to_copy;
+	bits{this->value}.copy_to(result_to_copy);
+	EXPECT_EQ(result_to_copy[0], 1);
+}
+
+TEST(non_template_basic, copy) {
+	struct non_copyable_t {
+		int value = 123;
+		non_copyable_t(const non_copyable_t&) = delete;
+		non_copyable_t& operator=(const non_copyable_t&) = delete;
+	} non_copyable{};
+
+	non_copyable_t copy_of_non_copyable = bits{non_copyable}.copy();
+	EXPECT_EQ(copy_of_non_copyable.value, 123);
+	EXPECT_NE(&copy_of_non_copyable.value, &non_copyable.value);
+}
+
 }
