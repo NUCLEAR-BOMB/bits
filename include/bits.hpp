@@ -42,7 +42,7 @@ public:
 
 	explicit constexpr bits(Value& val) noexcept : m_value(val) {}
 
-	constexpr Value& value() const { return m_value; }
+	[[nodiscard]] constexpr Value& value() const { return m_value; }
 
 private:
 	//#if defined(UINT64_MAX) && UINT64_MAX == UINTMAX_MAX
@@ -390,35 +390,35 @@ private:
 
 public:
 
-	constexpr narrow_t narrow() {
+	[[nodiscard]] constexpr narrow_t narrow() {
 		return narrow_t(m_value);
 	}
 
 	template<class Byte = std::byte>
-	constexpr std::array<Byte, sizeof(value_type)> as_bytes() const {
+	[[nodiscard]] constexpr std::array<Byte, sizeof(value_type)> as_bytes() const {
 		static_assert(sizeof(Byte) == 1);
 		using byte_array = std::array<Byte, sizeof(value_type)>;
 		return bit_cast<byte_array>(m_value);
 	}
 
-	constexpr auto as_uint() const {
+	[[nodiscard]] constexpr auto as_uint() const {
 		static_assert(is_convertible_as_uint<value_type>, 
 			"Can't be represented as an unsigned integer");
 		return bit_cast<type_as_uint<value_type>>(m_value);
 	}
-	constexpr auto as_int() const {
+	[[nodiscard]] constexpr auto as_int() const {
 		static_assert(is_convertible_as_uint<value_type>,
 			"Can't be represented as an signed integer");
 		return bit_cast<type_as_int<value_type>>(m_value);
 	}
 
 	template<class To, std::enable_if_t<!std::is_reference_v<To>, int> = 0>
-	constexpr To as() const {
+	[[nodiscard]] constexpr To as() const {
 		static_assert(sizeof(To) == sizeof(value_type));
 		return bit_cast<To>(m_value);
 	}
 	template<class To, std::enable_if_t<std::is_reference_v<To>, int> = 0>
-	constexpr To as() {
+	[[nodiscard]] constexpr To as() {
 		static_assert(sizeof(To) == sizeof(value_type));
 		return reinterpret_cast<To&>(m_value);
 	}
@@ -443,7 +443,7 @@ public:
 		bit_flip_at(m_value, index);
 	}
 
-	constexpr bool all() const {
+	[[nodiscard]] constexpr bool all() const {
 		return bit_test_all(m_value);
 	}
 
@@ -534,8 +534,8 @@ public:
 			bit_assign(value, index, x);
 			return *this;
 		}
-		constexpr bool get() const { return bit_get(value, index); }
-		constexpr operator bool() const { return get(); }
+		[[nodiscard]] constexpr bool get() const { return bit_get(value, index); }
+		[[nodiscard]] constexpr operator bool() const { return get(); }
 
 		constexpr void flip() {
 			bit_flip_at(value, index);
@@ -546,7 +546,7 @@ public:
 		Value& value;
 	};
 
-	constexpr reference operator[](const bitsize_t index) {
+	[[nodiscard]] constexpr reference operator[](const bitsize_t index) {
 		return reference(index, m_value);
 	}
 	
