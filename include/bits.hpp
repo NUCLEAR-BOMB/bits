@@ -236,17 +236,17 @@ private:
 				bit_flip(x);
 			}
 		} else {
-			if constexpr (sizeof(T) >= sizeof(local_uintmax_t)) {
+			if constexpr (is_convertible_as_uint<T>) {
+				using uint_type = type_as_uint<T>;
+				const auto uint_value = bit_cast<uint_type>(value);
+				bit_cast_to(value, uint_type(~uint_value));
+			} else {
 				using first_type = type_as_least_uintmax_array<T>;
 				using rest_type = size_as_uint<sizeof(first_type) - sizeof(T)>;
 				bit_flip(*reinterpret_cast<first_type*>(&value));
 
 				std::byte* offset = reinterpret_cast<std::byte*>(&value) + sizeof(first_type);
 				bit_flip(*reinterpret_cast<rest_type*>(offset));
-			} else {
-				using uint_type = type_as_uint<T>;
-				const auto uint_value = bit_cast<uint_type>(value);
-				bit_cast_to(value, uint_type(~uint_value));
 			}
 		}
 	}
@@ -307,6 +307,41 @@ private:
 		} else {
 			using byte_array = std::array<std::byte, sizeof(T)>;
 			return bit_get(bit_cast<byte_array>(value), index);
+		}
+	}
+	
+	template<class T>
+	static constexpr bool bit_test_all(const T& value) {
+		if constexpr (is_like_integral<T>) {
+			return value == T(-1);
+		} else if constexpr (is_integer_array<T>) {
+			for (auto& x : value) {
+				if (x != T(-1)) return false;
+			}
+			return true;
+		} else {
+#if 0
+			static constexpr std::array<std::byte, sizeof(T)> all_array_cmp = [] {
+				std::array<std::byte, sizeof(T)> result;
+				for (auto& x : result) x = std::byte{0xFF};
+				return result;
+			}();
+			return std::memcmp(&value, all_array_cmp.data(), sizeof(T)) == 0;
+#else
+			if constexpr (is_convertible_as_uint<T>) {
+				using as_uint_type = type_as_uint<T>;
+				return bit_test_all(bit_cast<as_uint_type>(value));
+			} else {
+				using uintmax_array_type = std::array<local_uintmax_t, sizeof(T) / sizeof(local_uintmax_t)>;
+				const bool first_result = bit_test_all(*reinterpret_cast<uintmax_array_type*>(&value));
+				if (!first_result) return false;
+
+				using padding_type = size_as_uint<sizeof(T) % sizeof(local_uintmax_t)>;
+				const auto* padding_ptr = reinterpret_cast<std::byte*>(&value) + sizeof(uintmax_array_type);
+				const auto padding_result = bit_test_all(*reinterpret_cast<padding_type*>(padding_ptr));
+				return padding_result;
+			}
+#endif
 		}
 	}
 
@@ -406,6 +441,10 @@ public:
 	}
 	constexpr void flip_at(const bitsize_t index) {
 		bit_flip_at(m_value, index);
+	}
+
+	constexpr bool all() const {
+		return bit_test_all(m_value);
 	}
 
 	template<class T>

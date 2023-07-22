@@ -189,4 +189,22 @@ TYPED_TEST(basic, flip_at) {
 	EXPECT_EQ(array[1], T(0b0100));
 }
 
+TYPED_TEST(basic, all) {
+	EXPECT_FALSE(bits{this->value}.all());
+	EXPECT_FALSE(bits{this->const_value}.all());
+
+	constexpr bool compile_time_all = [] {
+		T val = T(1);
+		if (bits{val}.all()) return false;
+
+		val = T(-1);
+		if (!bits{val}.all()) return false;
+		return true;
+	}();
+	EXPECT_TRUE(compile_time_all);
+
+	this->value = T(-1);
+	EXPECT_TRUE(bits{this->value}.all());
+}
+
 }
