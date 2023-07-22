@@ -5,3 +5,4 @@
 !test/
 !CMakeLists.txt
 !.clang-tidy
+!.clang-format
