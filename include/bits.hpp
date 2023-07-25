@@ -229,7 +229,6 @@ private:
         } else {
             if (is_constant_evaluated()) {
                 using array_type = as_max_size_array<T>;
-                using array_uvalue_type = typename array_type::value_type;
 
                 auto value_as_arr = bit_cast<array_type>(value);
                 bit_set<SetTo>(value_as_arr);

@@ -220,7 +220,8 @@ TEST_F(int_basic, copy) {
 TEST_F(int_basic, as_refw) {
     struct struct_value_t {
         int v = -2;
-    } struct_value;
+    };
+    struct_value_t struct_value;
     auto ref_wrapper = bits{struct_value}.as_refw<unsigned>();
     EXPECT_EQ(ref_wrapper, unsigned(-2));
 
