@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project("bits" LANGUAGES CXX)
 
+option(BITS_CLANG_FORMAT "Adds the clang-format target 'format'" ON)
+
 set(source "include/bits.hpp")
 
 add_library("bits" INTERFACE ${source})
@@ -37,4 +39,6 @@ function(add_clang_format_target name)
 	)
 endfunction()
 
-add_clang_format_target(format)
+if (BITS_CLANG_FORMAT)
+	add_clang_format_target(format)
+endif()
