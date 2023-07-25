@@ -4,7 +4,7 @@ option(BITS_GTEST_DEBUG_BREAK "Adds the --gtest_break_on_failure and --gtest_cat
 
 option(BITS_CLANG_TIDY "Enables clang-tidy target 'tidy' for Makefile and Ninja generators" YES)
 
-set(source basic.cpp operators.cpp test_types.hpp main.cpp)
+set(source basic.cpp operators.cpp test_types.hpp main.cpp slice.cpp)
 
 add_executable("bits-test" ${source})
 target_compile_options("bits-test" PRIVATE 

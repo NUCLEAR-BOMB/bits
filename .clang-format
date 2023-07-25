@@ -1,7 +1,7 @@
 
 Standard: c++17
 
-ColumnLimit: 100
+ColumnLimit: 95
 
 IndentWidth: 4
 ContinuationIndentWidth: 4
@@ -51,7 +51,7 @@ BraceWrapping:
 CompactNamespaces: false
 NamespaceIndentation: Inner
 
-PackConstructorInitializers: CurrentLine
+PackConstructorInitializers: NextLine
 
 DeriveLineEnding: false
 DerivePointerAlignment: false

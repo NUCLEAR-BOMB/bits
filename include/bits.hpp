@@ -36,7 +36,7 @@
     #define BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS 0
 #endif
 
-template<class Value>
+template<class Value = int>
 class bits {
 public:
     using value_type = std::remove_const_t<Value>;
@@ -192,7 +192,8 @@ private:
 
     template<class To, class From>
     static constexpr void narrow_bit_cast_to(To& to, const From& from) {
-        if constexpr (is_bit_convertible<From, To> && std::is_trivially_copy_assignable_v<To>) {
+        if constexpr (is_bit_convertible<From, To>
+                      && std::is_trivially_copy_assignable_v<To>) {
             to = static_cast<To>(from);
         } else if constexpr (sizeof(To) >= sizeof(From)) {
             expand_bit_cast_to(to, from);
@@ -433,6 +434,33 @@ private:
 public:
     [[nodiscard]] constexpr narrow_t narrow() { return narrow_t(m_value); }
 
+    class slice {
+    private:
+        struct none_t {
+            constexpr none_t() = default;
+        };
+        struct some_t {
+            constexpr some_t(const bitsize_t value) : value(value) {}
+            constexpr some_t() = delete;
+            bitsize_t value;
+        };
+        
+    public:
+        explicit constexpr slice(const some_t start, const some_t end)
+            : m_start(start.value), m_end(end.value) {}
+        explicit constexpr slice(none_t, const bitsize_t end)
+            : m_start(static_cast<bitsize_t>(0)), m_end(end) {}
+        explicit constexpr slice(const bitsize_t start, none_t)
+            : m_start(start), m_end(static_cast<bitsize_t>(-1)) {}
+        
+        constexpr bitsize_t start() const { return m_start; }
+        constexpr bitsize_t end() const { return m_end; }
+        
+    private:
+        const bitsize_t m_start;
+        const bitsize_t m_end;
+    };
+
     template<class Byte = std::uint_least8_t>
     [[nodiscard]] constexpr auto as_bytes() const {
         static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
@@ -588,7 +616,8 @@ public:
 
     class reference {
     public:
-        constexpr reference(const bitsize_t index, Value& value) : index(index), value(value) {}
+        constexpr reference(const bitsize_t index, Value& value)
+            : index(index), value(value) {}
 
         constexpr reference& operator=(const bool x) {
             bit_assign(value, index, x);

@@ -55,7 +55,9 @@ TYPED_TEST(basic, as) {
     EXPECT_EQ(bits{this->const_value}.template as<UInt>(), UInt(this->const_value));
     constexpr auto compile_time_as = bits{this->constexpr_value}.template as<UInt>();
     EXPECT_EQ(compile_time_as, UInt(this->constexpr_value));
-    if constexpr (sizeof(UInt) == sizeof(float)) { (void)bits{this->value}.template as<float>(); }
+    if constexpr (sizeof(UInt) == sizeof(float)) {
+        (void)bits{this->value}.template as<float>();
+    }
 }
 
 TYPED_TEST(basic, as_ref) {
@@ -154,8 +156,8 @@ TYPED_TEST(basic, flip) {
     T c_array[4]{T(15), T(30), T(56), T(96)};
     bits{c_array}.flip();
 
-    constexpr auto expected_c_array
-        = weak_make_array<T, 4>(T(u_t(-1) - 15), T(u_t(-1) - 30), T(u_t(-1) - 56), T(u_t(-1) - 96));
+    constexpr auto expected_c_array = weak_make_array<T, 4>(T(u_t(-1) - 15), T(u_t(-1) - 30),
+        T(u_t(-1) - 56), T(u_t(-1) - 96));
     EXPECT_EQ(bits{c_array}, expected_c_array);
 }
 

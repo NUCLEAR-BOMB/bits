@@ -79,7 +79,8 @@ TYPED_TEST(operators, greater) {
 
     EXPECT_FALSE(bits{this->value} > bits{this->value});
     EXPECT_FALSE(bits{this->const_value} > bits{this->const_value});
-    constexpr bool compile_time_gt_bits = bits{this->constexpr_value} > bits{this->constexpr_value};
+    constexpr bool compile_time_gt_bits
+        = bits{this->constexpr_value} > bits{this->constexpr_value};
     EXPECT_FALSE(compile_time_gt_bits);
 
     EXPECT_TRUE(bits{this->const_value} > bits{this->value});
@@ -112,7 +113,8 @@ TYPED_TEST(operators, less) {
 
     EXPECT_FALSE(bits{this->value} < bits{this->value});
     EXPECT_FALSE(bits{this->const_value} < bits{this->const_value});
-    constexpr bool compile_time_lt_bits = bits{this->constexpr_value} < bits{this->constexpr_value};
+    constexpr bool compile_time_lt_bits
+        = bits{this->constexpr_value} < bits{this->constexpr_value};
     EXPECT_FALSE(compile_time_lt_bits);
 
     EXPECT_FALSE(bits{this->const_value} < bits{this->value});
