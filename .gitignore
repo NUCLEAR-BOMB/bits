@@ -2,6 +2,7 @@
 
 !.gitignore
 !.gitattributes
+!.editorconfig
 !include/
 !test/
 !CMakeLists.txt
