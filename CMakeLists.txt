@@ -21,14 +21,20 @@ if (BITS_BUILD_TEST)
 	add_subdirectory(test)
 endif()
 
-set(format_sources "")
-foreach(folder IN ITEMS include test)
-	file(GLOB_RECURSE folder_files "${folder}/*.hpp" "${folder}/*.cpp")
-	list(APPEND format_sources ${folder_files})
-endforeach()
+function(add_clang_format_target name)
+	find_program(clang_format_binary clang-format)
+	if (clang_format_binary STREQUAL "clang_tidy_binary-NOTFOUND")
+		message(NOTICE "[clang-format] clang-format not found")
+		return()
+	endif()
+	file(GLOB_RECURSE format_files 
+		"${PROJECT_SOURCE_DIR}/test/*.hpp" "${PROJECT_SOURCE_DIR}/test/*.cpp" "${PROJECT_SOURCE_DIR}/include/*.hpp"
+	)
+	add_custom_target(${name}
+		COMMAND ${clang_format_binary} --verbose -i ${format_files}
+		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} VERBATIM
+		SOURCES .clang-format
+	)
+endfunction()
 
-add_custom_target(format
-	COMMAND clang-format -i ${format_sources}
-	DEPENDS ${format_sources}
-	SOURCES .clang-format
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} VERBATIM)
+add_clang_format_target(format)
