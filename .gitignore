@@ -5,6 +5,7 @@
 !.editorconfig
 !include/
 !test/
+!example/
 !CMakeLists.txt
 !.clang-tidy
 !.clang-format
