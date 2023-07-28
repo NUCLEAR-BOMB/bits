@@ -24,6 +24,11 @@ using test_types = ::testing::Types<
 template<class T>
 using as_uint_t = std::make_unsigned_t<T>;
 
+template<class To, class From>
+constexpr auto uint_as(const From from) {
+    return static_cast<as_uint_t<To>>(from);
+}
+
 template<class T>
 constexpr unsigned bit_width(T value) {
     unsigned result = 0;
