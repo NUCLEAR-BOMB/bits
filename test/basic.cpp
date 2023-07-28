@@ -15,6 +15,16 @@ struct basic : ::testing::Test {
     const T const_value = T(2);
     static constexpr T constexpr_value = T(3);
 };
+
+struct custom_struct {
+    int ivalue = 1;
+    float fvalue = 2.f;
+};
+
+struct custom_basic : ::testing::Test {
+    custom_struct value{};
+};
+
 using int_basic = basic<int>;
 
 TYPED_TEST_SUITE(basic, test_types, );
@@ -249,6 +259,16 @@ TEST_F(int_basic, as_array) {
     const auto char_arr = bits{const_value}.as_array<char>();
     constexpr std::array<char, 4> cmp_char_arr{2, 0, 0, 0};
     EXPECT_EQ(char_arr, cmp_char_arr);
+}
+
+TEST_F(custom_basic, emplace) {
+    bits{value}.template emplace<int, float>(10, 2.f);
+    EXPECT_EQ(value.ivalue, 10);
+    EXPECT_EQ(value.fvalue, 2.f);
+
+    bits{value}.template emplace<float, int>(5.f, 1);
+    EXPECT_EQ(value.ivalue, 1084227584);
+    EXPECT_EQ(value.fvalue, 1.40129846432e-45f);
 }
 
 } // namespace

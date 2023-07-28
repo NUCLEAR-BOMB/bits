@@ -366,6 +366,15 @@ private:
         }
     }
 
+    template<class What, class... Values>
+    constexpr void bit_emplace(What& what_emplace, const Values&... values) {
+        static_assert((sizeof(Values) + ...) == sizeof(value_type));
+        std::byte* offset = reinterpret_cast<std::byte*>(&what_emplace);
+
+        ((bit_cast_to(*reinterpret_cast<Values*>(offset), values), offset += sizeof(Values)),
+            ...);
+    }
+
     template<class T>
     static constexpr bool is_bits_type = false;
     template<class T>
@@ -547,6 +556,13 @@ public:
     }
     template<class To>
     constexpr void copy_to(const To&) = delete;
+
+    template<class... Values>
+    constexpr void emplace(const Values&... args) {
+        static_assert((sizeof(Values) + ...) == sizeof(value_type),
+            "The sum of the sizes of all the types must be equal to the size of the underlying type");
+        bit_emplace(m_value, args...);
+    }
 
     constexpr bits& operator+=(const value_as_uint_type x) { return op_assign(as_uint() + x); }
     constexpr bits& operator-=(const value_as_uint_type x) { return op_assign(as_uint() - x); }
