@@ -57,15 +57,6 @@ private:
     template<class T>
     using type_identity_t = typename type_identity<T>::type;
 
-    template<std::size_t N>
-    static decltype(auto) size_as_uint_impl() {
-        if constexpr (N <= 1) return std::uint8_t{};
-        else if constexpr (N <= 2) return std::uint16_t{};
-        else if constexpr (N <= 4) return std::uint32_t{};
-        else if constexpr (N <= 8) return std::uint64_t{};
-        else return void();
-    }
-
 #if defined(UINT64_MAX) && UINT64_MAX <= UINTMAX_MAX
     using local_uintmax_t = std::uint64_t;
 #else
@@ -73,11 +64,22 @@ private:
 #endif
 
     template<std::size_t N>
+    static decltype(auto) size_as_uint_impl() {
+        if constexpr (N <= 1) return std::uint8_t{};
+        else if constexpr (N <= 2) return std::uint16_t{};
+        else if constexpr (N <= 4) return std::uint32_t{};
+        else if constexpr (N <= 8) return std::uint64_t{};
+        else return local_uintmax_t{};
+    }
+
+    template<std::size_t N>
     using size_as_uint = decltype(size_as_uint_impl<N>());
     template<class T>
     using type_as_uint = size_as_uint<sizeof(T)>;
     template<class T>
     using type_as_int = std::make_signed_t<type_as_uint<T>>;
+
+    using value_as_uint_type = type_as_uint<value_type>;
 
     template<class T, bool = std::is_enum_v<T>>
     struct safe_underlying_type_impl {
@@ -155,10 +157,14 @@ private:
 #else
         if constexpr (is_bit_convertible<From, To>) {
             return static_cast<To>(from);
-        } else {
+        } else if constexpr (std::is_default_constructible_v<To>) {
+            static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
             To result{};
             std::memcpy(&result, &from, sizeof(From));
             return result;
+        } else {
+            static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
+            return reinterpret_cast<const To&>(from);
         }
 #endif
     }
@@ -370,6 +376,12 @@ private:
         (std::is_same_v<T1, bits> && !is_bits_type<T2>) || std::is_same_v<T2, bits>, int>;
 
     template<class T>
+    constexpr bits& op_assign(const T integer) {
+        bit_cast_to(m_value, static_cast<value_as_uint_type>(integer));
+        return *this;
+    }
+
+    template<class T>
     constexpr auto as_integer_sign_of() const {
         if constexpr (std::is_unsigned_v<T>) {
             return as_uint();
@@ -379,7 +391,7 @@ private:
     }
     template<class T>
     constexpr bits& narrow_assign_integer(const T& x) {
-        bit_cast_to(m_value, static_cast<type_as_uint<value_type>>(x));
+        bit_cast_to(m_value, static_cast<value_as_uint_type>(x));
         return *this;
     }
 
@@ -444,7 +456,7 @@ public:
             constexpr some_t() = delete;
             bitsize_t value;
         };
-        
+
     public:
         explicit constexpr slice(const some_t start, const some_t end)
             : m_start(start.value), m_end(end.value) {}
@@ -452,10 +464,10 @@ public:
             : m_start(static_cast<bitsize_t>(0)), m_end(end) {}
         explicit constexpr slice(const bitsize_t start, none_t)
             : m_start(start), m_end(static_cast<bitsize_t>(-1)) {}
-        
+
         constexpr bitsize_t start() const { return m_start; }
         constexpr bitsize_t end() const { return m_end; }
-        
+
     private:
         const bitsize_t m_start;
         const bitsize_t m_end;
@@ -477,7 +489,7 @@ public:
     [[nodiscard]] constexpr auto as_uint() const {
         static_assert(is_convertible_as_uint<value_type>,
             "Can't be represented as an unsigned integer");
-        return bit_cast<type_as_uint<value_type>>(m_value);
+        return bit_cast<value_as_uint_type>(m_value);
     }
     [[nodiscard]] constexpr auto as_int() const {
         static_assert(is_convertible_as_uint<value_type>,
@@ -536,45 +548,19 @@ public:
     template<class To>
     constexpr void copy_to(const To&) = delete;
 
-    template<class T>
-    constexpr bits& operator+=(const T& x) {
-        return narrow_assign_integer(as_integer_sign_of<T>() + x);
+    constexpr bits& operator+=(const value_as_uint_type x) { return op_assign(as_uint() + x); }
+    constexpr bits& operator-=(const value_as_uint_type x) { return op_assign(as_uint() - x); }
+    constexpr bits& operator*=(const value_as_uint_type x) { return op_assign(as_uint() * x); }
+    constexpr bits& operator/=(const value_as_uint_type x) { return op_assign(as_uint() / x); }
+    constexpr bits& operator%=(const value_as_uint_type x) { return op_assign(as_uint() % x); }
+    constexpr bits& operator&=(const value_as_uint_type x) { return op_assign(as_uint() & x); }
+    constexpr bits& operator|=(const value_as_uint_type x) { return op_assign(as_uint() | x); }
+    constexpr bits& operator^=(const value_as_uint_type x) { return op_assign(as_uint() ^ x); }
+    constexpr bits& operator<<=(const value_as_uint_type x) {
+        return op_assign(as_uint() << x);
     }
-    template<class T>
-    constexpr bits& operator-=(const T& x) {
-        return narrow_assign_integer(as_integer_sign_of<T>() - x);
-    }
-    template<class T>
-    constexpr bits& operator*=(const T& x) {
-        return narrow_assign_integer(as_integer_sign_of<T>() * x);
-    }
-    template<class T>
-    constexpr bits& operator/=(const T& x) {
-        return narrow_assign_integer(as_int() / x);
-    }
-    template<class T>
-    constexpr bits& operator%=(const T& x) {
-        return narrow_assign_integer(as_uint() % x);
-    }
-    template<class T>
-    constexpr bits& operator&=(const T& x) {
-        return narrow_assign_integer(as_uint() & x);
-    }
-    template<class T>
-    constexpr bits& operator|=(const T& x) {
-        return narrow_assign_integer(as_uint() | x);
-    }
-    template<class T>
-    constexpr bits& operator^=(const T& x) {
-        return narrow_assign_integer(as_uint() ^ x);
-    }
-    template<class T>
-    constexpr bits& operator<<=(const T& x) {
-        return narrow_assign_integer(as_uint() << x);
-    }
-    template<class T>
-    constexpr bits& operator>>=(const T& x) {
-        return narrow_assign_integer(as_uint() >> x);
+    constexpr bits& operator>>=(const value_as_uint_type x) {
+        return op_assign(as_uint() >> x);
     }
 
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
@@ -623,6 +609,7 @@ public:
             bit_assign(value, index, x);
             return *this;
         }
+
         [[nodiscard]] constexpr bool get() const { return bit_get(value, index); }
         [[nodiscard]] constexpr operator bool() const { return get(); }
 
