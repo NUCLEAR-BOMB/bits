@@ -374,6 +374,11 @@ private:
         ((bit_cast_to(*reinterpret_cast<Values*>(offset), values), offset += sizeof(Values)),
             ...);
     }
+    template<class What, class Value>
+    constexpr void bit_emplace(What& what_emplace, const Value& value) {
+        static_assert(sizeof(What) == sizeof(Value));
+        bit_cast_to(what_emplace, value);
+    }
 
     template<class T>
     static constexpr bool is_bits_type = false;
