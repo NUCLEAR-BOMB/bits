@@ -449,20 +449,31 @@ private:
         constexpr operator RefTo() const { return get(); }
 
         template<class... Args>
-        constexpr decltype(auto) operator()(Args&&... args) const {
+        constexpr auto operator()(Args&&... args) const
+            -> std::invoke_result_t<RefTo, Args...> {
             return std::invoke(get(), std::forward<Args>(args)...);
         }
         // clang-format off
-        template<class T> constexpr ref_wrapper& operator+=(const T& x) { return *this = get() + x; }
-        template<class T> constexpr ref_wrapper& operator-=(const T& x) { return *this = get() - x; }
-        template<class T> constexpr ref_wrapper& operator*=(const T& x) { return *this = get() * x; }
-        template<class T> constexpr ref_wrapper& operator/=(const T& x) { return *this = get() / x; }
-        template<class T> constexpr ref_wrapper& operator%=(const T& x) { return *this = get() % x; }
-        template<class T> constexpr ref_wrapper& operator&=(const T& x) { return *this = get() & x; }
-        template<class T> constexpr ref_wrapper& operator|=(const T& x) { return *this = get() | x; }
-        template<class T> constexpr ref_wrapper& operator^=(const T& x) { return *this = get() ^ x; }
-        template<class T> constexpr ref_wrapper& operator<<=(const T& x) { return *this = get() << x; }
-        template<class T> constexpr ref_wrapper& operator>>=(const T& x) { return *this = get() >> x; }
+        template<class T> constexpr auto operator+=(const T& x)
+            -> decltype(get() + x, *this) { return *this = get() + x; }
+        template<class T> constexpr auto operator-=(const T& x)
+            -> decltype(get() - x, *this) { return *this = get() - x; }
+        template<class T> constexpr auto operator*=(const T& x)
+            -> decltype(get() * x, *this) { return *this = get() * x; }
+        template<class T> constexpr auto operator/=(const T& x)
+            -> decltype(get() / x, *this) { return *this = get() / x; }
+        template<class T> constexpr auto operator%=(const T& x)
+            -> decltype(get() % x, *this) { return *this = get() % x; }
+        template<class T> constexpr auto operator&=(const T& x)
+            -> decltype(get() & x, *this) { return *this = get() & x; }
+        template<class T> constexpr auto operator|=(const T& x)
+            -> decltype(get() | x, *this) { return *this = get() | x; }
+        template<class T> constexpr auto operator^=(const T& x)
+            -> decltype(get() ^ x, *this) { return *this = get() ^ x; }
+        template<class T> constexpr auto operator<<=(const T& x)
+            -> decltype(get() << x, *this) { return *this = get() << x; }
+        template<class T> constexpr auto operator>>=(const T& x)
+            -> decltype(get() >> x, *this) { return *this = get() >> x; }
         // clang-format on
 
     private:
@@ -581,6 +592,7 @@ public:
         bit_emplace(m_value, args...);
     }
 
+    // clang-format off
     constexpr bits& operator+=(const value_as_uint_type x) { return op_assign(as_uint() + x); }
     constexpr bits& operator-=(const value_as_uint_type x) { return op_assign(as_uint() - x); }
     constexpr bits& operator*=(const value_as_uint_type x) { return op_assign(as_uint() * x); }
@@ -589,12 +601,9 @@ public:
     constexpr bits& operator&=(const value_as_uint_type x) { return op_assign(as_uint() & x); }
     constexpr bits& operator|=(const value_as_uint_type x) { return op_assign(as_uint() | x); }
     constexpr bits& operator^=(const value_as_uint_type x) { return op_assign(as_uint() ^ x); }
-    constexpr bits& operator<<=(const value_as_uint_type x) {
-        return op_assign(as_uint() << x);
-    }
-    constexpr bits& operator>>=(const value_as_uint_type x) {
-        return op_assign(as_uint() >> x);
-    }
+    constexpr bits& operator<<=(const value_as_uint_type x) { return op_assign(as_uint() << x); }
+    constexpr bits& operator>>=(const value_as_uint_type x) { return op_assign(as_uint() >> x); }
+    // clang-format on
 
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator==(const Left& left, const Right& right) {
