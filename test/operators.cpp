@@ -1,8 +1,8 @@
 #include <bits.hpp>
+#include <cmath>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <test_types.hpp>
-#include <cmath>
 
 #define TypeParam T
 
@@ -16,6 +16,7 @@ struct operators : ::testing::Test {
 };
 
 using float_operators = operators<float>;
+using int_operators = operators<int>;
 
 TYPED_TEST_SUITE(operators, test_types, );
 
@@ -436,6 +437,25 @@ TEST_F(float_operators, subscript) {
     EXPECT_EQ(bits{value}, 0xFF800000); // -inf
     bits{value}[22].flip();
     EXPECT_EQ(bits{value}, 0xFFC00000); // nan
+}
+
+TEST_F(int_operators, refw_addition_assignment) {
+    bits{value}.as_refw<unsigned>() += 1;
+    EXPECT_EQ(value, 2);
+}
+TEST_F(int_operators, refw_subtraction_assignment) {
+    auto uint_ref = bits{value}.as_refw<unsigned>();
+    uint_ref -= 2;
+    EXPECT_EQ(uint_ref, unsigned(-1));
+    EXPECT_EQ(value, -1);
+}
+TEST_F(int_operators, refw_bitwise_OR_assignment) {
+    bits{value}.as_refw<unsigned>() |= ~0u;
+    EXPECT_EQ(value, -1);
+}
+TEST_F(int_operators, refw_bitwise_left_shift_assignment) {
+    bits{value}.as_refw<unsigned>() <<= 31;
+    EXPECT_EQ(value, -2147483648);
 }
 
 } // namespace

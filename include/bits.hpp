@@ -367,16 +367,16 @@ private:
     }
 
     template<class What, class... Values>
-    constexpr void bit_emplace(What& what_emplace, const Values&... values) {
+    static constexpr void bit_emplace(What& what_emplace, const Values&... values) {
         static_assert((sizeof(Values) + ...) == sizeof(value_type));
         std::byte* offset = reinterpret_cast<std::byte*>(&what_emplace);
 
         ((bit_cast_to(*reinterpret_cast<Values*>(offset), values), offset += sizeof(Values)),
             ...);
     }
-    template<class What, class Value>
-    constexpr void bit_emplace(What& what_emplace, const Value& value) {
-        static_assert(sizeof(What) == sizeof(Value));
+    template<class What, class T>
+    static constexpr void bit_emplace(What& what_emplace, const T& value) {
+        static_assert(sizeof(What) == sizeof(T));
         bit_cast_to(what_emplace, value);
     }
 
@@ -452,6 +452,18 @@ private:
         constexpr decltype(auto) operator()(Args&&... args) const {
             return std::invoke(get(), std::forward<Args>(args)...);
         }
+        // clang-format off
+        template<class T> constexpr ref_wrapper& operator+=(const T& x) { return *this = get() + x; }
+        template<class T> constexpr ref_wrapper& operator-=(const T& x) { return *this = get() - x; }
+        template<class T> constexpr ref_wrapper& operator*=(const T& x) { return *this = get() * x; }
+        template<class T> constexpr ref_wrapper& operator/=(const T& x) { return *this = get() / x; }
+        template<class T> constexpr ref_wrapper& operator%=(const T& x) { return *this = get() % x; }
+        template<class T> constexpr ref_wrapper& operator&=(const T& x) { return *this = get() & x; }
+        template<class T> constexpr ref_wrapper& operator|=(const T& x) { return *this = get() | x; }
+        template<class T> constexpr ref_wrapper& operator^=(const T& x) { return *this = get() ^ x; }
+        template<class T> constexpr ref_wrapper& operator<<=(const T& x) { return *this = get() << x; }
+        template<class T> constexpr ref_wrapper& operator>>=(const T& x) { return *this = get() >> x; }
+        // clang-format on
 
     private:
         Value& value;
@@ -490,23 +502,23 @@ public:
     template<class Byte = std::uint_least8_t>
     [[nodiscard]] constexpr auto as_bytes() const {
         static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
-        using byte_array = std::array<Byte, sizeof(value_type) / sizeof(std::uint_least8_t)>;
+        using byte_array = std::array<Byte, sizeof(value_type) / sizeof(Byte)>;
         return bit_cast<byte_array>(m_value);
     }
     template<class Byte = std::uint_least8_t>
     [[nodiscard]] constexpr auto& as_bytes_ref() {
         static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
-        using byte_array = std::array<Byte, sizeof(value_type) / sizeof(std::uint_least8_t)>;
+        using byte_array = std::array<Byte, sizeof(value_type) / sizeof(Byte)>;
         return as_ref<byte_array>();
     }
 
     [[nodiscard]] constexpr auto as_uint() const {
-        static_assert(is_convertible_as_uint<value_type>,
+        static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
             "Can't be represented as an unsigned integer");
         return bit_cast<value_as_uint_type>(m_value);
     }
     [[nodiscard]] constexpr auto as_int() const {
-        static_assert(is_convertible_as_uint<value_type>,
+        static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
             "Can't be represented as an signed integer");
         return bit_cast<type_as_int<value_type>>(m_value);
     }
