@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -160,7 +161,7 @@ private:
         } else if constexpr (std::is_default_constructible_v<To>) {
             static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
             To result{};
-            std::memcpy(&result, &from, sizeof(From));
+            std::memcpy(std::addressof(result), std::addressof(from), sizeof(From));
             return result;
         } else {
             static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
@@ -175,7 +176,7 @@ private:
         if constexpr (std::is_trivially_copy_assignable_v<To>) {
             to = bit_cast<To>(from);
         } else {
-            std::memcpy(&to, &from, sizeof(To));
+            std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
         }
     }
     template<class To, class From>
@@ -188,8 +189,8 @@ private:
         if constexpr (sizeof(To) == sizeof(From)) {
             bit_cast_to(to, from);
         } else {
-            std::memcpy(&to, &from, sizeof(From));
-            const auto to_as_bytes = reinterpret_cast<std::byte*>(&to);
+            std::memcpy(std::addressof(to), std::addressof(from), sizeof(From));
+            const auto to_as_bytes = reinterpret_cast<std::byte*>(std::addressof(to));
             std::memset(to_as_bytes + sizeof(From), 0, sizeof(To) - sizeof(From));
         }
     }
@@ -204,7 +205,7 @@ private:
         } else if constexpr (sizeof(To) >= sizeof(From)) {
             expand_bit_cast_to(to, from);
         } else {
-            std::memcpy(&to, &from, sizeof(To));
+            std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
         }
     }
     template<class To, class From>
@@ -262,9 +263,10 @@ private:
             } else {
                 using first_type = type_as_least_uintmax_array<T>;
                 using rest_type = size_as_uint<sizeof(first_type) - sizeof(T)>;
-                bit_flip(*reinterpret_cast<first_type*>(&value));
+                bit_flip(*reinterpret_cast<first_type*>(std::addressof(value)));
 
-                std::byte* offset = reinterpret_cast<std::byte*>(&value) + sizeof(first_type);
+                std::byte* offset
+                    = reinterpret_cast<std::byte*>(std::addressof(value)) + sizeof(first_type);
                 bit_flip(*reinterpret_cast<rest_type*>(offset));
             }
         }
@@ -353,8 +355,8 @@ private:
             } else {
                 using uintmax_array_type
                     = std::array<local_uintmax_t, sizeof(T) / sizeof(local_uintmax_t)>;
-                const bool first_result
-                    = bit_test_all(*reinterpret_cast<uintmax_array_type*>(&value));
+                const bool first_result = bit_test_all(
+                    *reinterpret_cast<uintmax_array_type*>(std::addressof(value)));
                 if (!first_result) return false;
 
                 using padding_type = size_as_uint<sizeof(T) % sizeof(local_uintmax_t)>;
@@ -369,7 +371,7 @@ private:
     template<class What, class... Values>
     static constexpr void bit_emplace(What& what_emplace, const Values&... values) {
         static_assert((sizeof(Values) + ...) == sizeof(value_type));
-        std::byte* offset = reinterpret_cast<std::byte*>(&what_emplace);
+        std::byte* offset = reinterpret_cast<std::byte*>(std::addressof(what_emplace));
 
         ((bit_cast_to(*reinterpret_cast<Values*>(offset), values), offset += sizeof(Values)),
             ...);

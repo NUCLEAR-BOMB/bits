@@ -440,12 +440,12 @@ TEST_F(float_operators, subscript) {
 }
 
 TEST_F(int_operators, refw_addition_assignment) {
-    bits{value}.as_refw<unsigned>() += 1;
+    bits{value}.as_refw<unsigned>() += 1u;
     EXPECT_EQ(value, 2);
 }
 TEST_F(int_operators, refw_subtraction_assignment) {
     auto uint_ref = bits{value}.as_refw<unsigned>();
-    uint_ref -= 2;
+    uint_ref -= 2u;
     EXPECT_EQ(uint_ref, unsigned(-1));
     EXPECT_EQ(value, -1);
 }
@@ -454,7 +454,7 @@ TEST_F(int_operators, refw_bitwise_OR_assignment) {
     EXPECT_EQ(value, -1);
 }
 TEST_F(int_operators, refw_bitwise_left_shift_assignment) {
-    bits{value}.as_refw<unsigned>() <<= 31;
+    bits{value}.as_refw<unsigned>() <<= 31u;
     EXPECT_EQ(value, -2147483648);
 }
 
