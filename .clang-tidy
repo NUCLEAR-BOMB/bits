@@ -22,7 +22,6 @@ Checks: >
   -misc-non-private-member-variables-in-classes,
   -readability-named-parameter,
   -modernize-use-bool-literals,
-  -readability-implicit-bool-conversion
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }

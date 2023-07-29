@@ -191,6 +191,9 @@ TYPED_TEST(basic, all) {
     EXPECT_FALSE(bits{this->value}.all());
     EXPECT_FALSE(bits{this->const_value}.all());
 
+    this->value = T(-1);
+    EXPECT_TRUE(bits{this->value}.all());
+
     constexpr bool compile_time_all = [] {
         T val = T(1);
         if (bits{val}.all()) return false;
@@ -200,9 +203,49 @@ TYPED_TEST(basic, all) {
         return true;
     }();
     EXPECT_TRUE(compile_time_all);
+}
 
-    this->value = T(-1);
-    EXPECT_TRUE(bits{this->value}.all());
+TYPED_TEST(basic, any) {
+    EXPECT_TRUE(bits{this->value}.any());
+    EXPECT_TRUE(bits{this->const_value}.any());
+
+    this->value = T(0);
+    EXPECT_FALSE(bits{this->value}.any());
+
+    constexpr bool compile_time_any = [] {
+        T val = T(0);
+        if (bits{val}.any()) return false;
+
+        val = T(1);
+        if (!bits{val}.any()) return false;
+
+        val = T(-1);
+        if (!bits{val}.any()) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_any);
+}
+
+TYPED_TEST(basic, none) {
+    EXPECT_FALSE(bits{this->value}.none());
+    EXPECT_FALSE(bits{this->const_value}.none());
+
+    this->value = T(0);
+    EXPECT_TRUE(bits{this->value}.none());
+
+    constexpr bool compile_time_none = [] {
+        T val = T(5);
+        if (bits{val}.none()) return false;
+
+        val = T(0);
+        if (!bits{val}.none()) return false;
+
+        val = T(-1);
+        if (bits{val}.none()) return false;
+
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_none);
 }
 
 TYPED_TEST(basic, copy_to) {

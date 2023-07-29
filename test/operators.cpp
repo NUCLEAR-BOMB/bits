@@ -362,13 +362,13 @@ TYPED_TEST(operators, subscript) {
 
     EXPECT_TRUE(bits{this->value}[0].get());
 
-    bits{this->value}[0] = 0;
+    bits{this->value}[0] = bool(0);
     EXPECT_EQ(this->value, T(0b0000));
-    bits{this->value}[1] = 0b0001;
+    bits{this->value}[1] = bool(1);
     EXPECT_EQ(this->value, T(0b0010));
-    bits{this->value}[0] = 1;
+    bits{this->value}[0] = bool(1);
     EXPECT_EQ(this->value, T(0b0011));
-    bits{this->value}[7] = 1;
+    bits{this->value}[7] = bool(1);
     EXPECT_EQ(this->value, T(0b1000'0011u));
 
     auto array = weak_make_array<T, 4>(0b0111, 0b0010, 0b1000);
@@ -377,13 +377,13 @@ TYPED_TEST(operators, subscript) {
 
     EXPECT_TRUE(bits{array}[CHAR_BIT * sizeof(T) + 1]);
 
-    bits{array}[4] = 1;
+    bits{array}[4] = bool(1);
     EXPECT_TRUE(bits{array}[4]);
     bits{array}[CHAR_BIT * sizeof(T) * 2 + 1] = 1;
     EXPECT_TRUE(bits{array}[CHAR_BIT * sizeof(T) * 2 + 1]);
 
     EXPECT_TRUE(bits{array[1]}[1]);
-    bits{array[1]}[1] = 0;
+    bits{array[1]}[1] = bool(0);
     EXPECT_FALSE(bits{array[1]}[1]);
 
     constexpr bool compile_time_subscript = [] {
@@ -431,9 +431,9 @@ TEST_F(float_operators, bitwise_right_shift_assignment) {
 }
 
 TEST_F(float_operators, subscript) {
-    bits{value}[31] = 1;
+    bits{value}[31] = bool(1);
     EXPECT_EQ(value, -1.f);
-    bits{value}[30] = 1;
+    bits{value}[30] = bool(1);
     EXPECT_EQ(bits{value}, 0xFF800000); // -inf
     bits{value}[22].flip();
     EXPECT_EQ(bits{value}, 0xFFC00000); // nan

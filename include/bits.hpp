@@ -331,40 +331,63 @@ private:
         }
     }
 
+    template<auto* test_function, class T>
+    static constexpr bool bit_test_non_trivial_base(const T& value) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using as_uint_type = type_as_uint<T>;
+            return test_function(bit_cast<as_uint_type>(value));
+        } else {
+            using uintmax_array_type
+                = std::array<local_uintmax_t, sizeof(T) / sizeof(local_uintmax_t)>;
+            const bool first_result
+                = test_function(*reinterpret_cast<uintmax_array_type*>(std::addressof(value)));
+            if (!first_result) return false;
+
+            using padding_type = size_as_uint<sizeof(T) % sizeof(local_uintmax_t)>;
+            const auto* padding_ptr
+                = reinterpret_cast<std::byte*>(&value) + sizeof(uintmax_array_type);
+            return test_function(*reinterpret_cast<padding_type*>(padding_ptr));
+        }
+    }
+
     template<class T>
     static constexpr bool bit_test_all(const T& value) {
         if constexpr (is_like_integral<T>) {
             return value == T(-1);
         } else if constexpr (is_integer_array<T>) {
-            for (auto& x : value) {
+            for (const auto x : value) {
                 if (x != T(-1)) return false;
             }
             return true;
         } else {
-#if 0
-            static constexpr std::array<std::byte, sizeof(T)> all_array_cmp = [] {
-                std::array<std::byte, sizeof(T)> result;
-                for (auto& x : result) x = std::byte{0xFF};
-                return result;
-            }();
-            return std::memcmp(&value, all_array_cmp.data(), sizeof(T)) == 0;
-#else
-            if constexpr (is_convertible_as_uint<T>) {
-                using as_uint_type = type_as_uint<T>;
-                return bit_test_all(bit_cast<as_uint_type>(value));
-            } else {
-                using uintmax_array_type
-                    = std::array<local_uintmax_t, sizeof(T) / sizeof(local_uintmax_t)>;
-                const bool first_result = bit_test_all(
-                    *reinterpret_cast<uintmax_array_type*>(std::addressof(value)));
-                if (!first_result) return false;
+            return bit_test_non_trivial_base<&bit_test_all<T>>(value);
+        }
+    }
 
-                using padding_type = size_as_uint<sizeof(T) % sizeof(local_uintmax_t)>;
-                const auto* padding_ptr
-                    = reinterpret_cast<std::byte*>(&value) + sizeof(uintmax_array_type);
-                return bit_test_all(*reinterpret_cast<padding_type*>(padding_ptr));
+    template<class T>
+    static constexpr bool bit_test_any(const T& value) {
+        if constexpr (is_like_integral<T>) {
+            return value != T(0);
+        } else if constexpr (is_integer_array<T>) {
+            for (const auto x : value) {
+                if (x != T(0)) return true;
             }
-#endif
+            return false;
+        } else {
+            return bit_test_non_trivial_base<&bit_test_any<T>>(value);
+        }
+    }
+    template<class T>
+    static constexpr bool bit_test_none(const T& value) {
+        if constexpr (is_like_integral<T>) {
+            return value == T(0);
+        } else if constexpr (is_integer_array<T>) {
+            for (const auto x : value) {
+                if (x != T(0)) return false;
+            }
+            return true;
+        } else {
+            return bit_test_non_trivial_base<&bit_test_none<T>>(value);
         }
     }
 
@@ -576,6 +599,8 @@ public:
     constexpr void flip_at(const bitsize_t index) { bit_flip_at(m_value, index); }
 
     [[nodiscard]] constexpr bool all() const { return bit_test_all(m_value); }
+    [[nodiscard]] constexpr bool any() const { return bit_test_any(m_value); }
+    [[nodiscard]] constexpr bool none() const { return bit_test_none(m_value); }
 
     [[nodiscard]] constexpr auto copy() const { return bit_cast<value_type>(m_value); }
 
