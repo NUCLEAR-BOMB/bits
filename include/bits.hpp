@@ -149,6 +149,21 @@ private:
     }
 
     template<class To, class From>
+    static constexpr void bit_copy(To& dest, const From& src) {
+        static_assert(sizeof(To) == sizeof(From));
+        if constexpr (is_integer_array<To> && is_like_integral<From>) {
+            using elem_type = array_value_type<To>;
+            using int_type = safe_underlying_type<From>;
+
+            for (std::size_t i = 0; i < std::size(dest); ++i) {
+                dest[i] = elem_type(int_type(src) >> (i * sizeof(elem_type) * CHAR_BIT));
+            }
+        } else {
+            std::memcpy(std::addressof(dest), std::addressof(src), sizeof(To));
+        }
+    }
+
+    template<class To, class From>
     static constexpr To bit_cast(const From& from) {
         static_assert(sizeof(To) == sizeof(From));
 #ifdef __cpp_lib_bit_cast
@@ -156,15 +171,16 @@ private:
 #elif BITS_HAS_BIT_CAST_INTRINSICS
         return __builtin_bit_cast(To, from);
 #else
-        if constexpr (is_bit_convertible<From, To>) {
+        static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
+        if constexpr (std::is_same_v<To, From> && std::is_trivially_copy_constructible_v<To>) {
+            return from;
+        } else if constexpr (is_bit_convertible<From, To>) {
             return static_cast<To>(from);
         } else if constexpr (std::is_default_constructible_v<To>) {
-            static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
             To result{};
-            std::memcpy(std::addressof(result), std::addressof(from), sizeof(From));
+            bit_copy(result, from);
             return result;
         } else {
-            static_assert(std::is_copy_constructible_v<To>, "Type must be copy constructible");
             return reinterpret_cast<const To&>(from);
         }
 #endif
@@ -176,7 +192,7 @@ private:
         if constexpr (std::is_trivially_copy_assignable_v<To>) {
             to = bit_cast<To>(from);
         } else {
-            std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
+            bit_copy(to, from);
         }
     }
     template<class To, class From>
@@ -565,7 +581,7 @@ public:
         static_assert(sizeof(value_type) % sizeof(ArrayType) == 0,
                       "Array type must be a divisible of size of the value_type");
         using array_type = std::array<ArrayType, sizeof(value_type) / sizeof(ArrayType)>;
-        return as<array_type>();
+        return bit_cast<array_type>(m_value);
     }
 
     template<class To>

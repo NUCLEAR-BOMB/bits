@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <tuple>
 
-#define BITS_COMPILER_INTRINSICS 1
+//#define BITS_COMPILER_INTRINSICS 1
 #include <bits.hpp>
 #include <test_tools.hpp>
 
@@ -43,6 +43,14 @@ TEST_F(basic, as) {
     EXPECT_CONST_STRICT_EQ(bits{10}.as<unsigned>(), 10U);
 
     EXPECT_STRICT_EQ(bits{0x40000000}.as<float>(), 2.f);
+
+    constexpr bool compile_time_as = [] {
+        int val = -1;
+        auto uval = bits{val}.as<unsigned>();
+        if (uval != unsigned(-1)) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_as);
 }
 
 TEST_F(basic, as_ref) {
@@ -67,7 +75,15 @@ TEST_F(basic, as_ref) {
 
 TEST_F(basic, as_bytes) {
     EXPECT_EQ(bits{1}.as_bytes(), (std::array<std::uint8_t, 4>{1, 0, 0, 0}));
-    EXPECT_EQ(bits{0x01'FF}.as_bytes(), (std::array<std::uint8_t, 4>{255, 1, 0, 0}));
+    EXPECT_EQ(bits{0x00'00'01'FF}.as_bytes(), (std::array<std::uint8_t, 4>{255, 1, 0, 0}));
+
+    constexpr bool compile_time_as_bytes = [] {
+        const int val = 0x03'02'01'00;
+        const auto valb = bits{val}.as_bytes();
+        if (!array_eq(valb, {0, 1, 2, 3})) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_as_bytes);
 }
 
 TEST_F(basic, narrow_as) {
@@ -231,7 +247,6 @@ TEST_F(basic, as_bytes_ref) {
 TEST_F(basic, copy) {
     struct non_copyable_t {
         int value = 123;
-        non_copyable_t(const non_copyable_t&) = delete;
         non_copyable_t& operator=(const non_copyable_t&) = delete;
     } non_copyable{};
 
@@ -277,6 +292,14 @@ TEST_F(basic, as_array) {
 
     const auto char_arr = bits{const_ivalue}.as_array<char>();
     EXPECT_EQ(char_arr, (std::array<char, 4>{2, 0, 0, 0}));
+
+    constexpr bool compile_time_as_array = [] {
+        int val = 1234 << 16 | 5678;
+        auto valw = bits{val}.as_array<short>();
+        if (!array_eq(valw, {5678, 1234})) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_as_array);
 }
 
 TEST_F(basic, emplace) {

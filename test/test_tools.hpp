@@ -61,3 +61,11 @@ template<class Expected, class Received>
     EXPECT_EQ(static_cast<const void*>(expr1), static_cast<const void*>(expr2))
 
 } // namespace custom_tests
+
+template<class T, std::size_t N>
+constexpr bool array_eq(const std::array<T, N>& left, const std::array<T, N>& right) {
+    for (std::size_t i = 0; i < N; ++i) {
+        if (left[i] != right[i]) return false;
+    }
+    return true;
+}

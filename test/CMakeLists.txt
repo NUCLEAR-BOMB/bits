@@ -21,6 +21,7 @@ $<$<CXX_COMPILER_ID:MSVC>:
     /wd4820 # 'bytes' bytes padding added after construct 'member_name'
     /wd4514 # 'function' : unreferenced inline function has been removed
     /wd5246 # 'member': the initialization of a subobject should be wrapped in braces
+    /wd5045 # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 >
 $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
     -Wall # Enables all the warnings
