@@ -59,9 +59,9 @@ private:
     using type_identity_t = typename type_identity<T>::type;
 
 #if defined(UINT64_MAX) && UINT64_MAX <= UINTMAX_MAX
-    using local_uintmax_t = std::uint64_t;
+    using biggest_uint_t = std::uint64_t;
 #else
-    using local_uintmax_t = std::uintmax_t;
+    using biggest_uint_t = std::uintmax_t;
 #endif
 
     template<std::size_t N>
@@ -70,7 +70,7 @@ private:
         else if constexpr (N <= 2) return std::uint16_t{};
         else if constexpr (N <= 4) return std::uint32_t{};
         else if constexpr (N <= 8) return std::uint64_t{};
-        else return local_uintmax_t{};
+        else return biggest_uint_t{};
     }
 
     template<std::size_t N>
@@ -98,7 +98,7 @@ private:
     static constexpr bool is_like_integral = std::is_integral_v<T> || std::is_enum_v<T>;
 
     template<class T>
-    static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(local_uintmax_t));
+    static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(biggest_uint_t));
 
     template<class From, class To>
     static constexpr bool is_bit_convertible = is_like_integral<From> && is_like_integral<To>;
@@ -106,7 +106,7 @@ private:
     template<class T>
     static constexpr T denominator_of_power2(const T x) {
         const auto result = T(x & (~(x - 1)));
-        return result > sizeof(local_uintmax_t) ? sizeof(local_uintmax_t) : result;
+        return result > sizeof(biggest_uint_t) ? sizeof(biggest_uint_t) : result;
     }
 
     template<class T>
@@ -121,10 +121,10 @@ private:
     template<class T, std::size_t Size = denominator_of_power2(sizeof(T))>
     using as_max_size_array = std::array<size_as_uint<Size>, sizeof(T) / Size>;
 
-    template<class T, class UIntMax = local_uintmax_t>
+    template<class T, class UIntMax = biggest_uint_t>
     using type_as_least_uintmax_array = std::array<UIntMax, sizeof(T) / sizeof(UIntMax)>;
 
-    using bitsize_t = local_uintmax_t;
+    using bitsize_t = biggest_uint_t;
 
     template<class T>
     using array_value_type = std::decay_t<decltype(std::declval<T&>()[std::size_t(0)])>;
@@ -155,7 +155,7 @@ private:
             using elem_type = array_value_type<To>;
             using int_type = safe_underlying_type<From>;
 
-            for (std::size_t i = 0; i < std::size(dest); ++i) {
+            for (std::size_t i = 0; i < sizeof(To) / sizeof(elem_type); ++i) {
                 dest[i] = elem_type(int_type(src) >> (i * sizeof(elem_type) * CHAR_BIT));
             }
         } else {
@@ -354,12 +354,12 @@ private:
             return test_function(bit_cast<as_uint_type>(value));
         } else {
             using uintmax_array_type
-                = std::array<local_uintmax_t, sizeof(T) / sizeof(local_uintmax_t)>;
+                = std::array<biggest_uint_t, sizeof(T) / sizeof(biggest_uint_t)>;
             const bool first_result
                 = test_function(*reinterpret_cast<uintmax_array_type*>(std::addressof(value)));
             if (!first_result) return false;
 
-            using padding_type = size_as_uint<sizeof(T) % sizeof(local_uintmax_t)>;
+            using padding_type = size_as_uint<sizeof(T) % sizeof(biggest_uint_t)>;
             const auto* padding_ptr
                 = reinterpret_cast<std::byte*>(&value) + sizeof(uintmax_array_type);
             return test_function(*reinterpret_cast<padding_type*>(padding_ptr));
@@ -566,12 +566,12 @@ public:
     }
 
     [[nodiscard]] constexpr auto as_uint() const {
-        static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
+        static_assert(sizeof(value_type) <= sizeof(biggest_uint_t),
                       "Can't be represented as an unsigned integer");
         return bit_cast<value_as_uint_type>(m_value);
     }
     [[nodiscard]] constexpr auto as_int() const {
-        static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
+        static_assert(sizeof(value_type) <= sizeof(biggest_uint_t),
                       "Can't be represented as an signed integer");
         return bit_cast<type_as_int<value_type>>(m_value);
     }
