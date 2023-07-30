@@ -1,15 +1,19 @@
 #include <bits.hpp>
 #include <gtest/gtest.h>
 
+#include <test_tools.hpp>
+
 namespace {
 
-TEST(slice, constructor) {
+using slice = test_struct;
+
+TEST_F(slice, constructor) {
     (void)bits<>::slice(1, 2);
     (void)bits<>::slice({}, 2);
     (void)bits<>::slice(3, {});
 }
 
-TEST(slice, start_end) {
+TEST_F(slice, start_end) {
     const auto s1 = bits<>::slice(1, 2);
     EXPECT_EQ(s1.start(), 1);
     EXPECT_EQ(s1.end(), 2);

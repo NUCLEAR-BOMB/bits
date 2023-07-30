@@ -4,7 +4,9 @@ option(BITS_GTEST_DEBUG_BREAK "Adds the --gtest_break_on_failure and --gtest_cat
 
 option(BITS_CLANG_TIDY "Enables clang-tidy target 'tidy' for Makefile and Ninja generators" YES)
 
-set(source basic.cpp operators.cpp test_types.hpp main.cpp slice.cpp)
+set(source
+    main.cpp basic.cpp test_tools.hpp operators.cpp slice.cpp
+)
 
 add_executable("bits-test" ${source})
 target_compile_options("bits-test" PRIVATE 
@@ -45,14 +47,10 @@ set_target_properties("bits-test" PROPERTIES
 )
 
 if (BITS_GTEST_BRIEF)
-    list(APPEND bits_gtest_extra_args "\"--gtest_brief=1\"")
+    target_compile_definitions("bits-test" PRIVATE ENABLE_GTEST_BRIEF)
 endif()
 if (BITS_GTEST_DEBUG_BREAK)
-    list(APPEND bits_gtest_extra_args "\"--gtest_break_on_failure\"" "\"--gtest_catch_exceptions=0\"")
-endif()
-if (bits_gtest_extra_args)
-    string(REPLACE ";" "," bits_gtest_extra_args "${bits_gtest_extra_args}")
-    target_compile_definitions("bits-test" PRIVATE EXTRA_ARGS=${bits_gtest_extra_args})
+    target_compile_definitions("bits-test" PRIVATE ENABLE_GTEST_DEBUG_BREAK)
 endif()
 
 include(FetchContent)
@@ -113,6 +111,7 @@ function(add_clang_tidy_target name)
         DEPENDS ${run_clang_tidy}
         SOURCES ${clang_tidy_config}
     )
+    set_target_properties(${name} PROPERTIES RULE_LAUNCH_CUSTOM "\"${CMAKE_COMMAND}\" -E time")
 endfunction()
 
 if (CMAKE_GENERATOR MATCHES "Unix Makefiles|Ninja" AND BITS_CLANG_TIDY)

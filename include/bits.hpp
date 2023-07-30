@@ -397,7 +397,7 @@ private:
         std::byte* offset = reinterpret_cast<std::byte*>(std::addressof(what_emplace));
 
         ((bit_cast_to(*reinterpret_cast<Values*>(offset), values), offset += sizeof(Values)),
-            ...);
+         ...);
     }
     template<class What, class T>
     static constexpr void bit_emplace(What& what_emplace, const T& value) {
@@ -448,7 +448,7 @@ private:
         template<class To>
         constexpr To as() const {
             static_assert(!std::is_reference_v<To>);
-            To result;
+            To result{};
             narrow_bit_cast_to(result, value);
             return result;
         }
@@ -461,6 +461,7 @@ private:
 
         template<class T>
         constexpr ref_wrapper& operator=(T&& other) {
+            static_assert(sizeof(T) == sizeof(RefTo));
             if constexpr (std::is_trivially_assignable_v<RefTo, T>) {
                 bit_cast_to(value, other);
             } else {
@@ -550,19 +551,19 @@ public:
 
     [[nodiscard]] constexpr auto as_uint() const {
         static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
-            "Can't be represented as an unsigned integer");
+                      "Can't be represented as an unsigned integer");
         return bit_cast<value_as_uint_type>(m_value);
     }
     [[nodiscard]] constexpr auto as_int() const {
         static_assert(sizeof(value_type) <= sizeof(local_uintmax_t),
-            "Can't be represented as an signed integer");
+                      "Can't be represented as an signed integer");
         return bit_cast<type_as_int<value_type>>(m_value);
     }
 
     template<class ArrayType>
     [[nodiscard]] constexpr auto as_array() const {
         static_assert(sizeof(value_type) % sizeof(ArrayType) == 0,
-            "Array type must be a divisible of size of the value_type");
+                      "Array type must be a divisible of size of the value_type");
         using array_type = std::array<ArrayType, sizeof(value_type) / sizeof(ArrayType)>;
         return as<array_type>();
     }
@@ -575,10 +576,15 @@ public:
     }
 
     template<class To>
-    [[nodiscard]] constexpr To& as_ref() {
-        static_assert(sizeof(To) == sizeof(value_type));
-        static_assert(!std::is_reference_v<To>);
-        return reinterpret_cast<To&>(m_value);
+    [[nodiscard]] constexpr auto& as_ref() {
+        using ref_type = std::conditional_t<std::is_const_v<Value>, const To&, To&>;
+        if constexpr (std::is_same_v<value_type, std::remove_const_t<To>>) {
+            return static_cast<ref_type>(m_value);
+        } else {
+            static_assert(sizeof(To) == sizeof(value_type));
+            static_assert(!std::is_reference_v<To>);
+            return reinterpret_cast<ref_type&>(m_value);
+        }
     }
 
     template<class RefTo>
@@ -614,7 +620,8 @@ public:
 
     template<class... Values>
     constexpr void emplace(const Values&... args) {
-        static_assert((sizeof(Values) + ...) == sizeof(value_type),
+        static_assert(
+            (sizeof(Values) + ...) == sizeof(value_type),
             "The sum of the sizes of all the types must be equal to the size of the underlying type");
         bit_emplace(m_value, args...);
     }
@@ -635,37 +642,37 @@ public:
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator==(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::equal_to<>>(unwrap(left), unwrap(right));
     }
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator!=(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::not_equal_to<>>(unwrap(left), unwrap(right));
     }
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator>(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::greater<>>(unwrap(left), unwrap(right));
     }
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator>=(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::greater_equal<>>(unwrap(left), unwrap(right));
     }
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator<(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::less<>>(unwrap(left), unwrap(right));
     }
     template<class Left, class Right, enable_compare_operator<Left, Right> = 0>
     friend constexpr bool operator<=(const Left& left, const Right& right) {
         static_assert(sizeof(unwrap(left)) == sizeof(unwrap(right)),
-            "The size of the operands is not equal to");
+                      "The size of the operands is not equal to");
         return bit_compare<std::less_equal<>>(unwrap(left), unwrap(right));
     }
 

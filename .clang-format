@@ -71,7 +71,7 @@ IncludeBlocks: Regroup
 SortIncludes: true
 SortUsingDeclarations: false
 
-AlignAfterOpenBracket: DontAlign
+AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None

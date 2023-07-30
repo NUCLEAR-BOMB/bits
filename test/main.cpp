@@ -3,24 +3,15 @@
 #include <string>
 #include <vector>
 
-template<class T, class... Args>
-constexpr std::array<T, sizeof...(Args)> make_array(Args&&... args) {
-    return {{std::forward<Args>(args)...}};
-}
-
 int main(int argc, char** argv) {
-#ifdef EXTRA_ARGS
-    auto append_args = make_array<std::string>(EXTRA_ARGS);
-
-    std::vector<char*> custom_argv(argv, argv + argc);
-    for (auto& arg : append_args) {
-        custom_argv.push_back(arg.data());
-        ++argc;
-    }
-
-    ::testing::InitGoogleTest(&argc, custom_argv.data());
-#else
-    ::testing::InitGoogleTest(&argc, argv);
+#ifdef ENABLE_GTEST_BRIEF
+    ::testing::FLAGS_gtest_brief = true;
 #endif
+#ifdef ENABLE_GTEST_DEBUG_BREAK
+    ::testing::FLAGS_gtest_catch_exceptions = false;
+    ::testing::FLAGS_gtest_break_on_failure = true;
+#endif
+
+    ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

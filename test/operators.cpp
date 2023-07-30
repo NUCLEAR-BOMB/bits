@@ -2,460 +2,420 @@
 #include <cmath>
 #include <cstdint>
 #include <gtest/gtest.h>
-#include <test_types.hpp>
+#include <test_tools.hpp>
 
-#define TypeParam T
+// for floats https://www.h-schmidt.net/FloatConverter/IEEE754.html
 
 namespace {
 
-template<class T>
-struct operators : ::testing::Test {
-    T value = T(1);
-    const T const_value = T(2);
-    static constexpr T constexpr_value = T(3);
-};
+using operators = test_struct;
 
-using float_operators = operators<float>;
-using int_operators = operators<int>;
-
-TYPED_TEST_SUITE(operators, test_types, );
-
-TYPED_TEST(operators, assigment) {
-    bits{this->value} = T(2);
-    EXPECT_EQ(this->value, T(2));
+TEST_F(operators, assigment) {
+    bits{ivalue} = 2;
+    EXPECT_EQ(ivalue, 2);
 }
 
-TYPED_TEST(operators, narrow_assigment) {
-    bits{this->value}.narrow() = 2;
-    EXPECT_EQ(this->value, T(2));
+TEST_F(operators, narrow_assigment) {
+    bits{ivalue}.narrow() = 2;
+    EXPECT_EQ(ivalue, 2);
+    bits{ivalue}.narrow() = 10LL;
+    EXPECT_EQ(ivalue, 10);
+    bits{ivalue}.narrow() = short(255);
+    EXPECT_EQ(ivalue, 255);
+
+    constexpr bool compile_time_narrow_assigment = [] {
+        int val = 0;
+        bits{val}.narrow() = 2;
+        if (val != 2) return false;
+        bits{val}.narrow() = 100'000LL;
+        if (val != 100'000) return false;
+        bits{val}.narrow() = short(-1);
+        if (val != -1) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_narrow_assigment);
 }
 
-TYPED_TEST(operators, equal) {
-    EXPECT_TRUE(bits{this->value} == T(1));
-    EXPECT_TRUE(bits{this->const_value} == T(2));
-    constexpr bool compile_time_equal_to_value = bits{this->constexpr_value} == T(3);
-    EXPECT_TRUE(compile_time_equal_to_value);
+TEST_F(operators, equal) {
+    EXPECT_TRUE(bits{ivalue} == 1);
+    EXPECT_TRUE(bits{const_ivalue} == 2);
+    EXPECT_TRUE(1 == bits{ivalue});
+    EXPECT_TRUE(2 == bits{const_ivalue});
+    EXPECT_TRUE(bits{ivalue} == bits{ivalue});
+    EXPECT_TRUE(bits{const_ivalue} == bits{const_ivalue});
 
-    EXPECT_TRUE(T(1) == bits{this->value});
-    EXPECT_TRUE(T(2) == bits{this->const_value});
-    constexpr bool compile_time_yoda_equal_to_value = T(3) == bits{this->constexpr_value};
-    EXPECT_TRUE(compile_time_yoda_equal_to_value);
+    EXPECT_FALSE(bits{ivalue} == 2);
+    EXPECT_FALSE(2 == bits{ivalue});
+    EXPECT_FALSE(bits{ivalue} == bits{2});
+    EXPECT_FALSE(bits{2} == bits{ivalue});
 
-    EXPECT_TRUE(bits{this->value} == bits{this->value});
-    EXPECT_TRUE(bits{this->const_value} == bits{this->const_value});
-    constexpr bool compile_time_equal_to_bits
-        = bits{this->constexpr_value} == bits{this->constexpr_value};
-    EXPECT_TRUE(compile_time_equal_to_bits);
+    constexpr bool compile_time_equal = [] {
+        int val = 2;
+        if (!(bits{val} == 2)) return false;
+        if (!(2 == bits{val})) return false;
+        if (!(bits{val} == bits{val})) return false;
+        if (!(bits{val} == bits{2})) return false;
+        if (!(bits{2} == bits{val})) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_equal);
 
-    EXPECT_FALSE(bits{this->value} == bits{this->const_value});
-    EXPECT_FALSE(bits{this->const_value} == bits{this->value});
-    EXPECT_FALSE(bits{this->value} == bits{this->constexpr_value});
-
-    EXPECT_TRUE(bits{1.f} == bits{1.f});
-
-    int array_1[8]{1, 0};
-    int array_2[8]{0, 1};
-    EXPECT_TRUE(bits{array_1} < bits{array_2});
+    const std::array<int, 4> arr1{1, 0};
+    const std::array<int, 4> arr2{1, 0};
+    EXPECT_TRUE(bits{arr1} == bits{arr2});
 }
 
-TYPED_TEST(operators, not_equal) {
-    EXPECT_FALSE(bits{this->value} != T(1));
-    EXPECT_FALSE(bits{this->const_value} != T(2));
-    constexpr bool compile_time_not_equal_to_value = bits{this->constexpr_value} != T(3);
-    EXPECT_FALSE(compile_time_not_equal_to_value);
+TEST_F(operators, not_equal) {
+    EXPECT_FALSE(bits{ivalue} != 1);
+    EXPECT_FALSE(bits{const_ivalue} != 2);
+    EXPECT_FALSE(1 != bits{ivalue});
+    EXPECT_FALSE(2 != bits{const_ivalue});
+    EXPECT_FALSE(bits{ivalue} != bits{ivalue});
+    EXPECT_FALSE(bits{const_ivalue} != bits{const_ivalue});
 
-    EXPECT_FALSE(bits{this->value} != bits{this->value});
-    EXPECT_FALSE(bits{this->const_value} != bits{this->const_value});
-    constexpr bool compile_time_not_equal_to_bits
-        = bits{this->constexpr_value} != bits{this->constexpr_value};
-    EXPECT_FALSE(compile_time_not_equal_to_bits);
+    EXPECT_TRUE(bits{ivalue} != 2);
+    EXPECT_TRUE(2 != bits{ivalue});
+    EXPECT_TRUE(bits{ivalue} != bits{2});
+    EXPECT_TRUE(bits{2} != bits{ivalue});
 
-    EXPECT_TRUE(bits{this->value} != bits{this->const_value});
-    EXPECT_TRUE(bits{this->const_value} != bits{this->value});
-    EXPECT_TRUE(bits{this->value} != bits{this->constexpr_value});
+    constexpr bool compile_time_not_equal = [] {
+        int val = -1;
+        if (bits{val} != -1) return false;
+        if (-1 != bits{val}) return false;
+        if (bits{val} != bits{val}) return false;
+        if (bits{val} != bits{-1}) return false;
+        if (bits{-1} != bits{val}) return false;
+        return true;
+    }();
+    EXPECT_TRUE(compile_time_not_equal);
+
+    const std::array<int, 4> arr1{10, 20, 30};
+    const std::array<int, 4> arr2{30, 20, 10};
+    EXPECT_TRUE(bits{arr1} != bits{arr2});
 }
 
-TYPED_TEST(operators, greater) {
-    EXPECT_TRUE(bits{this->value} > T(0));
-    EXPECT_TRUE(bits{this->const_value} > T(1));
-    constexpr bool compile_time_gt_value = bits{this->constexpr_value} > T(2);
-    EXPECT_TRUE(compile_time_gt_value);
-
-    EXPECT_FALSE(bits{this->value} > bits{this->value});
-    EXPECT_FALSE(bits{this->const_value} > bits{this->const_value});
-    constexpr bool compile_time_gt_bits
-        = bits{this->constexpr_value} > bits{this->constexpr_value};
-    EXPECT_FALSE(compile_time_gt_bits);
-
-    EXPECT_TRUE(bits{this->const_value} > bits{this->value});
-    EXPECT_FALSE(bits{this->value} > bits{this->const_value});
-    EXPECT_TRUE(bits{this->constexpr_value} > bits{this->value});
+TEST_F(operators, greater) {
+    EXPECT_TRUE(bits{ivalue} > 0);
+    EXPECT_TRUE(bits{const_ivalue} > 1);
+    EXPECT_FALSE(0 > bits{ivalue});
+    EXPECT_FALSE(1 > bits{const_ivalue});
 }
 
-TYPED_TEST(operators, greater_equal) {
-    EXPECT_TRUE(bits{this->value} >= T(1));
-    EXPECT_TRUE(bits{this->const_value} >= T(2));
-    constexpr bool compile_time_gteq_value = bits{this->constexpr_value} >= T(2);
-    EXPECT_TRUE(compile_time_gteq_value);
-
-    EXPECT_TRUE(bits{this->value} >= bits{this->value});
-    EXPECT_TRUE(bits{this->const_value} >= bits{this->const_value});
-    constexpr bool compile_time_gteq_bits
-        = bits{this->constexpr_value} >= bits{this->constexpr_value};
-    EXPECT_TRUE(compile_time_gteq_bits);
-
-    EXPECT_TRUE(bits{this->const_value} >= bits{this->value});
-    EXPECT_FALSE(bits{this->value} >= bits{this->const_value});
-    EXPECT_TRUE(bits{this->constexpr_value} >= bits{this->value});
+TEST_F(operators, greater_equal) {
+    EXPECT_TRUE(bits{ivalue} >= 1);
+    EXPECT_TRUE(bits{const_ivalue} >= 2);
+    EXPECT_FALSE(0 >= bits{ivalue});
+    EXPECT_FALSE(1 >= bits{const_ivalue});
 }
 
-TYPED_TEST(operators, less) {
-    EXPECT_TRUE(bits{this->value} < T(2));
-    EXPECT_TRUE(bits{this->const_value} < T(3));
-    constexpr bool compile_time_lt_value = bits{this->constexpr_value} < T(4);
-    EXPECT_TRUE(compile_time_lt_value);
-
-    EXPECT_FALSE(bits{this->value} < bits{this->value});
-    EXPECT_FALSE(bits{this->const_value} < bits{this->const_value});
-    constexpr bool compile_time_lt_bits
-        = bits{this->constexpr_value} < bits{this->constexpr_value};
-    EXPECT_FALSE(compile_time_lt_bits);
-
-    EXPECT_FALSE(bits{this->const_value} < bits{this->value});
-    EXPECT_TRUE(bits{this->value} < bits{this->const_value});
-    EXPECT_FALSE(bits{this->constexpr_value} < bits{this->value});
+TEST_F(operators, less) {
+    EXPECT_TRUE(bits{ivalue} < 2);
+    EXPECT_TRUE(bits{const_ivalue} < 3);
+    EXPECT_FALSE(1 < bits{ivalue});
+    EXPECT_FALSE(2 < bits{const_ivalue});
 }
 
-TYPED_TEST(operators, less_equal) {
-    EXPECT_TRUE(bits{this->value} <= T(1));
-    EXPECT_TRUE(bits{this->const_value} <= T(2));
-    constexpr bool compile_time_lteq_value = bits{this->constexpr_value} <= T(4);
-    EXPECT_TRUE(compile_time_lteq_value);
-
-    EXPECT_TRUE(bits{this->value} <= bits{this->value});
-    EXPECT_TRUE(bits{this->const_value} <= bits{this->const_value});
-    constexpr bool compile_time_lteq_bits
-        = bits{this->constexpr_value} <= bits{this->constexpr_value};
-    EXPECT_TRUE(compile_time_lteq_bits);
-
-    EXPECT_FALSE(bits{this->const_value} <= bits{this->value});
-    EXPECT_TRUE(bits{this->value} <= bits{this->const_value});
-    EXPECT_FALSE(bits{this->constexpr_value} <= bits{this->value});
+TEST_F(operators, less_equal) {
+    EXPECT_TRUE(bits{ivalue} <= 1);
+    EXPECT_TRUE(bits{const_ivalue} <= 2);
+    EXPECT_FALSE(2 <= bits{ivalue});
+    EXPECT_FALSE(3 <= bits{const_ivalue});
 }
 
-TYPED_TEST(operators, addition_assignment) {
-    bits{this->value} += 1;
-    EXPECT_EQ(this->value, T(2));
-    bits{this->value} += 100u;
-    EXPECT_EQ(this->value, T(102));
-    bits{this->value} += uint_as<T>(-2);
-    EXPECT_EQ(this->value, T(100));
-    bits{this->value} += uint_as<T>(-100);
-    EXPECT_EQ(this->value, T(0));
+TEST_F(operators, addition_assignment) {
+    bits{ivalue} += 1;
+    EXPECT_EQ(ivalue, 2);
+    bits{ivalue} += 100u;
+    EXPECT_EQ(ivalue, 102);
+    bits{ivalue} += unsigned(-2);
+    EXPECT_EQ(ivalue, 100);
+    bits{ivalue} += unsigned(-100);
+    EXPECT_EQ(ivalue, 0);
 
     constexpr bool compile_time_add = [] {
-        T val = T(1);
+        int val = 1;
         bits{val} += 2;
-        if (val != T(3)) return false;
-        bits{val} += uint_as<T>(-2);
-        if (val != T(1)) return false;
+        if (val != 3) return false;
+        bits{val} += unsigned(-2);
+        if (val != 1) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_add);
+
+    bits{fvalue} += 1 << 23;
+    EXPECT_EQ(fvalue, 2.f);
+    bits{fvalue} += 1 << 22;
+    EXPECT_EQ(fvalue, 3.f);
 }
 
-TYPED_TEST(operators, subtraction_assignment) {
-    bits{this->value} -= 1;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} -= 100u;
-    EXPECT_EQ(this->value, T(-100));
-    bits{this->value} -= uint_as<T>(-10);
-    EXPECT_EQ(this->value, T(-90));
-    bits{this->value} -= uint_as<T>(-100);
-    EXPECT_EQ(this->value, T(10));
+TEST_F(operators, subtraction_assignment) {
+    bits{ivalue} -= 1;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} -= 100u;
+    EXPECT_EQ(ivalue, -100);
+    bits{ivalue} -= unsigned(-10);
+    EXPECT_EQ(ivalue, -90);
+    bits{ivalue} -= unsigned(-100);
+    EXPECT_EQ(ivalue, 10);
 
     constexpr bool compile_time_sub = [] {
-        T val = T(6);
+        int val = 6;
         bits{val} -= 2;
-        if (val != T(4)) return false;
+        if (val != 4) return false;
         bits{val} -= 101;
-        if (val != T(-97)) return false;
+        if (val != -97) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_sub);
+
+    bits{fvalue} -= 1 << 22;
+    EXPECT_EQ(fvalue, 0.75f);
+    bits{fvalue} -= 1u << 30;
+    EXPECT_EQ(bits{fvalue}, 0xFF400000);
 }
 
-TYPED_TEST(operators, multiplication_assignment) {
-    bits{this->value} *= 2;
-    EXPECT_EQ(this->value, T(2));
-    bits{this->value} *= 5u;
-    EXPECT_EQ(this->value, T(10));
-    bits{this->value} *= 0;
-    EXPECT_EQ(this->value, T(0));
+TEST_F(operators, multiplication_assignment) {
+    bits{ivalue} *= 2;
+    EXPECT_EQ(ivalue, 2);
+    bits{ivalue} *= 5u;
+    EXPECT_EQ(ivalue, 10);
+    bits{ivalue} *= 0;
+    EXPECT_EQ(ivalue, 0);
 
     constexpr bool compile_time_mul = [] {
-        T val = T(10);
+        int val = 10;
         bits{val} *= 1;
-        if (val != T(10)) return false;
+        if (val != 10) return false;
         bits{val} *= 2;
-        if (val != T(20)) return false;
+        if (val != 20) return false;
         bits{val} *= 0;
-        if (val != T(0)) return false;
+        if (val != 0) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_mul);
 }
 
-TYPED_TEST(operators, division_assignment) {
-    bits{this->value} /= 2;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} = T(25);
-    bits{this->value} /= 5;
-    EXPECT_EQ(this->value, T(5));
+TEST_F(operators, division_assignment) {
+    bits{ivalue} /= 2;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} = 25;
+    bits{ivalue} /= 5;
+    EXPECT_EQ(ivalue, 5);
 
     constexpr bool compile_time_div = [] {
-        T val = T(124);
+        int val = 124;
         bits{val} /= 2;
-        if (val != T(62)) return false;
+        if (val != 62) return false;
         bits{val} /= 1;
-        if (val != T(62)) return false;
+        if (val != 62) return false;
         bits{val} /= 32;
-        if (val != T(1)) return false;
+        if (val != 1) return false;
         bits{val} /= 10;
-        if (val != T(0)) return false;
+        if (val != 0) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_div);
 }
 
-TYPED_TEST(operators, remainder_assignment) {
-    bits{this->value} %= 10;
-    EXPECT_EQ(this->value, T(1));
-    bits{this->value} %= 1;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} %= 20u;
-    EXPECT_EQ(this->value, T(0));
+TEST_F(operators, remainder_assignment) {
+    bits{ivalue} %= 10;
+    EXPECT_EQ(ivalue, 1);
+    bits{ivalue} %= 1;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} %= 20u;
+    EXPECT_EQ(ivalue, 0);
 
     constexpr bool compile_time_rem = [] {
-        T val = T(12);
+        int val = 12;
         bits{val} %= 20;
-        if (val != T(12)) return false;
+        if (val != 12) return false;
         bits{val} %= 10;
-        if (val != T(2)) return false;
+        if (val != 2) return false;
         bits{val} %= 1;
-        if (val != T(0)) return false;
+        if (val != 0) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_rem);
 }
 
-TYPED_TEST(operators, bitwise_AND_assignment) {
-    bits{this->value} &= 0b0001;
-    EXPECT_EQ(this->value, T(1));
-    bits{this->value} &= 0b0010;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} = T(0b1001);
-    bits{this->value} &= 0b1000u;
-    EXPECT_EQ(this->value, T(8));
-    bits{this->value} &= 0u;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} &= 0;
-    EXPECT_EQ(this->value, T(0));
+TEST_F(operators, bitwise_AND_assignment) {
+    bits{ivalue} &= 0b0001;
+    EXPECT_EQ(ivalue, 1);
+    bits{ivalue} &= 0b0010;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} = 0b1001;
+    bits{ivalue} &= 0b1000u;
+    EXPECT_EQ(ivalue, 8);
+    bits{ivalue} &= 0u;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} &= 0;
+    EXPECT_EQ(ivalue, 0);
 
     constexpr bool compile_time_bit_and = [] {
-        T val = T(0b1111);
+        int val = 0b1111;
         bits{val} &= 0b0111;
-        if (val != T(0b0111)) return false;
+        if (val != 0b0111) return false;
         bits{val} &= 0b0010u;
-        if (val != T(0b0010)) return false;
+        if (val != 0b0010) return false;
         bits{val} &= 0b1111u;
-        if (val != T(0b0010)) return false;
+        if (val != 0b0010) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_bit_and);
+
+    bits{fvalue} &= 0xF0000000;
+    EXPECT_EQ(bits{fvalue}, 0x30000000);
 }
 
-TYPED_TEST(operators, bitwise_OR_assignment) {
-    bits{this->value} |= 0b0001;
-    EXPECT_EQ(this->value, T(1));
-    bits{this->value} |= 0b1110u;
-    EXPECT_EQ(this->value, T(15));
-    bits{this->value} = T(0);
-    bits{this->value} |= 0b0100;
-    EXPECT_EQ(this->value, T(4));
-    bits{this->value} |= 0b0001;
-    EXPECT_EQ(this->value, T(5));
+TEST_F(operators, bitwise_OR_assignment) {
+    bits{ivalue} |= 0b0001;
+    EXPECT_EQ(ivalue, 1);
+    bits{ivalue} |= 0b1110u;
+    EXPECT_EQ(ivalue, 15);
+    bits{ivalue} = 0;
+    bits{ivalue} |= 0b0100;
+    EXPECT_EQ(ivalue, 4);
+    bits{ivalue} |= 0b0001;
+    EXPECT_EQ(ivalue, 5);
 
     constexpr bool compile_time_bit_or = [] {
-        T val = T(0b1100);
+        int val = 0b1100;
         bits{val} |= 0b1100;
-        if (val != T(0b1100)) return false;
+        if (val != 0b1100) return false;
         bits{val} |= 0b1111;
-        if (val != T(0b1111)) return false;
+        if (val != 0b1111) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_bit_or);
 }
 
-TYPED_TEST(operators, bitwise_XOR_assignment) {
-    bits{this->value} ^= 0b1111;
-    EXPECT_EQ(this->value, T(14));
-    bits{this->value} ^= 0b1010u;
-    EXPECT_EQ(this->value, T(4));
+TEST_F(operators, bitwise_XOR_assignment) {
+    bits{ivalue} ^= 0b1111;
+    EXPECT_EQ(ivalue, 14);
+    bits{ivalue} ^= 0b1010u;
+    EXPECT_EQ(ivalue, 4);
 
     constexpr bool compile_time_bit_xor = [] {
-        T val = T(0b1001);
+        int val = 0b1001;
         bits{val} ^= 0b1111;
-        if (val != T(0b0110)) return false;
+        if (val != 0b0110) return false;
         bits{val} ^= 0b0110;
-        if (val != T(0b0000)) return false;
+        if (val != 0b0000) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_bit_xor);
 }
 
-TYPED_TEST(operators, bitwise_left_shift_assignment) {
-    bits{this->value} <<= 1;
-    EXPECT_EQ(this->value, T(2));
-    bits{this->value} <<= 2u;
-    EXPECT_EQ(this->value, T(8));
-    bits{this->value} <<= 0;
-    EXPECT_EQ(this->value, T(8));
+TEST_F(operators, bitwise_left_shift_assignment) {
+    bits{ivalue} <<= 1;
+    EXPECT_EQ(ivalue, 2);
+    bits{ivalue} <<= 2u;
+    EXPECT_EQ(ivalue, 8);
+    bits{ivalue} <<= 0;
+    EXPECT_EQ(ivalue, 8);
 
     constexpr bool compile_time_lshift = [] {
-        T val = T(0b0100);
+        int val = 0b0100;
         bits{val} <<= 1;
-        if (val != T(0b1000)) return false;
+        if (val != 0b1000) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_lshift);
+
+    bits{fvalue} <<= 1;
+    EXPECT_EQ(fvalue, 1.7014118346e+38f);
+    bits{fvalue} <<= 1;
+    EXPECT_EQ(bits{fvalue}, 0xFE000000);
 }
 
-TYPED_TEST(operators, bitwise_right_shift_assignment) {
-    bits{this->value} >>= 1;
-    EXPECT_EQ(this->value, T(0));
-    bits{this->value} = T(120);
-    bits{this->value} >>= 5u;
-    EXPECT_EQ(this->value, T(3));
-    bits{this->value} >>= 0u;
-    EXPECT_EQ(this->value, T(3));
+TEST_F(operators, bitwise_right_shift_assignment) {
+    bits{ivalue} >>= 1;
+    EXPECT_EQ(ivalue, 0);
+    bits{ivalue} = 120;
+    bits{ivalue} >>= 5u;
+    EXPECT_EQ(ivalue, 3);
+    bits{ivalue} >>= 0u;
+    EXPECT_EQ(ivalue, 3);
 
     constexpr bool compile_time_rshift = [] {
-        T val = T(0b1000);
+        int val = 0b1000;
         bits{val} >>= 1;
-        if (val != T(0b0100)) return false;
+        if (val != 0b0100) return false;
         return true;
     }();
     EXPECT_TRUE(compile_time_rshift);
+
+    bits{fvalue} >>= 7;
+    EXPECT_EQ(bits{fvalue}, 0x007F0000);
 }
 
-TYPED_TEST(operators, subscript) {
-    EXPECT_TRUE(bits{this->value}[0]);
-    EXPECT_FALSE(bits{this->value}[1]);
+TEST_F(operators, subscript) {
+    EXPECT_TRUE(bits{ivalue}[0]);
+    EXPECT_FALSE(bits{ivalue}[1]);
 
-    EXPECT_FALSE(bits{this->const_value}[0]);
-    EXPECT_TRUE(bits{this->const_value}[1]);
+    EXPECT_FALSE(bits{const_ivalue}[0]);
+    EXPECT_TRUE(bits{const_ivalue}[1]);
 
-    EXPECT_TRUE(bits{this->constexpr_value}[0]);
-    EXPECT_TRUE(bits{this->constexpr_value}[1]);
-    EXPECT_FALSE(bits{this->constexpr_value}[2]);
+    EXPECT_TRUE(bits{ivalue}[0].get());
 
-    EXPECT_TRUE(bits{this->value}[0].get());
-
-    bits{this->value}[0] = bool(0);
-    EXPECT_EQ(this->value, T(0b0000));
-    bits{this->value}[1] = bool(1);
-    EXPECT_EQ(this->value, T(0b0010));
-    bits{this->value}[0] = bool(1);
-    EXPECT_EQ(this->value, T(0b0011));
-    bits{this->value}[7] = bool(1);
-    EXPECT_EQ(this->value, T(0b1000'0011u));
-
-    auto array = weak_make_array<T, 4>(0b0111, 0b0010, 0b1000);
-    EXPECT_TRUE(bits{array}[0]);
-    EXPECT_FALSE(bits{array}[3]);
-
-    EXPECT_TRUE(bits{array}[CHAR_BIT * sizeof(T) + 1]);
-
-    bits{array}[4] = bool(1);
-    EXPECT_TRUE(bits{array}[4]);
-    bits{array}[CHAR_BIT * sizeof(T) * 2 + 1] = 1;
-    EXPECT_TRUE(bits{array}[CHAR_BIT * sizeof(T) * 2 + 1]);
-
-    EXPECT_TRUE(bits{array[1]}[1]);
-    bits{array[1]}[1] = bool(0);
-    EXPECT_FALSE(bits{array[1]}[1]);
+    bits{ivalue}[0] = bool(0);
+    EXPECT_EQ(ivalue, 0b0000);
+    bits{ivalue}[1] = bool(1);
+    EXPECT_EQ(ivalue, 0b0010);
+    bits{ivalue}[0] = bool(1);
+    EXPECT_EQ(ivalue, 0b0011);
+    bits{ivalue}[7] = bool(1);
+    EXPECT_EQ(ivalue, 0b1000'0011u);
 
     constexpr bool compile_time_subscript = [] {
-        T val = T(0b1000'0000u);
-        bits{val}[0] = 1;
-        if (val != T(0b1000'0001u)) return false;
-        if (bits{val}[0] != 1) return false;
+        int val = 0b1000'0000u;
+        bits{val}[0] = bool(1);
+        if (val != 0b1000'0001u) return false;
+        if (bits{val}[0] != bool(1)) return false;
 
         return true;
     }();
     EXPECT_TRUE(compile_time_subscript);
+
+    std::array<int, 4> arr{0b0111, 0b0010, 0b1000, 0b0000};
+    EXPECT_TRUE(bits{arr}[0]);
+    EXPECT_FALSE(bits{arr}[3]);
+    EXPECT_TRUE(bits{arr}[33]);
+
+    bits{arr}[4] = bool(1);
+    EXPECT_TRUE(bits{arr}[4]);
+    bits{arr}[65] = bool(1);
+    EXPECT_TRUE(bits{arr}[65]);
+
+    EXPECT_TRUE(bits{arr[1]}[1]);
+    bits{arr[1]}[1] = bool(0);
+    EXPECT_FALSE(bits{arr[1]}[1]);
+
+    bits{fvalue}[31] = bool(1);
+    EXPECT_EQ(fvalue, -1.f);
+    bits{fvalue}[30] = bool(1);
+    EXPECT_EQ(bits{fvalue}, 0xFF800000); // -inf
+    bits{fvalue}[22].flip();
+    EXPECT_EQ(bits{fvalue}, 0xFFC00000); // nan
 }
 
-// https://www.h-schmidt.net/FloatConverter/IEEE754.html
-
-TEST_F(float_operators, addition_assignment) {
-    bits{value} += 1 << 23;
-    EXPECT_EQ(value, 2.f);
-    bits{value} += 1 << 22;
-    EXPECT_EQ(value, 3.f);
+TEST_F(operators, refw_addition_assignment) {
+    bits{ivalue}.as_refw<unsigned>() += 1u;
+    EXPECT_EQ(ivalue, 2);
 }
-
-TEST_F(float_operators, subtraction_assignment) {
-    bits{value} -= 1 << 22;
-    EXPECT_EQ(value, 0.75f);
-    bits{value} -= 1u << 30;
-    EXPECT_EQ(bits{value}, 0xFF400000);
-}
-
-TEST_F(float_operators, bitwise_AND_assignment) {
-    bits{value} &= 0xF0000000;
-    EXPECT_EQ(bits{value}, 0x30000000);
-}
-
-TEST_F(float_operators, bitwise_left_shift_assignment) {
-    bits{value} <<= 1;
-    EXPECT_EQ(value, 1.7014118346e+38f);
-    bits{value} <<= 1;
-    EXPECT_EQ(bits{value}, 0xFE000000);
-}
-
-TEST_F(float_operators, bitwise_right_shift_assignment) {
-    bits{value} >>= 7;
-    EXPECT_EQ(bits{value}, 0x007F0000);
-}
-
-TEST_F(float_operators, subscript) {
-    bits{value}[31] = bool(1);
-    EXPECT_EQ(value, -1.f);
-    bits{value}[30] = bool(1);
-    EXPECT_EQ(bits{value}, 0xFF800000); // -inf
-    bits{value}[22].flip();
-    EXPECT_EQ(bits{value}, 0xFFC00000); // nan
-}
-
-TEST_F(int_operators, refw_addition_assignment) {
-    bits{value}.as_refw<unsigned>() += 1u;
-    EXPECT_EQ(value, 2);
-}
-TEST_F(int_operators, refw_subtraction_assignment) {
-    auto uint_ref = bits{value}.as_refw<unsigned>();
+TEST_F(operators, refw_subtraction_assignment) {
+    auto uint_ref = bits{ivalue}.as_refw<unsigned>();
     uint_ref -= 2u;
     EXPECT_EQ(uint_ref, unsigned(-1));
-    EXPECT_EQ(value, -1);
+    EXPECT_EQ(ivalue, -1);
 }
-TEST_F(int_operators, refw_bitwise_OR_assignment) {
-    bits{value}.as_refw<unsigned>() |= ~0u;
-    EXPECT_EQ(value, -1);
+TEST_F(operators, refw_bitwise_OR_assignment) {
+    bits{ivalue}.as_refw<unsigned>() |= ~0u;
+    EXPECT_EQ(ivalue, -1);
 }
-TEST_F(int_operators, refw_bitwise_left_shift_assignment) {
-    bits{value}.as_refw<unsigned>() <<= 31u;
-    EXPECT_EQ(value, -2147483648);
+TEST_F(operators, refw_bitwise_left_shift_assignment) {
+    bits{ivalue}.as_refw<unsigned>() <<= 31u;
+    EXPECT_EQ(ivalue, -2147483648);
 }
 
 } // namespace
