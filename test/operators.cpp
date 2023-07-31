@@ -23,6 +23,9 @@ TEST_F(operators, narrow_assigment) {
     bits{ivalue}.narrow() = short(255);
     EXPECT_EQ(ivalue, 255);
 
+    bits{fvalue}.narrow() = 2.f;
+    EXPECT_EQ(fvalue, 2.f);
+
     constexpr bool compile_time_narrow_assigment = [] {
         int val = 0;
         bits{val}.narrow() = 2;
@@ -48,6 +51,9 @@ TEST_F(operators, equal) {
     EXPECT_FALSE(2 == bits{ivalue});
     EXPECT_FALSE(bits{ivalue} == bits{2});
     EXPECT_FALSE(bits{2} == bits{ivalue});
+
+    EXPECT_TRUE(bits{fvalue} == 1.f);
+    EXPECT_TRUE(bits{fvalue} == 0x3f800000);
 
     constexpr bool compile_time_equal = [] {
         int val = 2;
@@ -78,6 +84,9 @@ TEST_F(operators, not_equal) {
     EXPECT_TRUE(bits{ivalue} != bits{2});
     EXPECT_TRUE(bits{2} != bits{ivalue});
 
+    EXPECT_TRUE(bits{fvalue} != 2.f);
+    EXPECT_TRUE(bits{fvalue} != 0U);
+
     constexpr bool compile_time_not_equal = [] {
         int val = -1;
         if (bits{val} != -1) return false;
@@ -99,6 +108,8 @@ TEST_F(operators, greater) {
     EXPECT_TRUE(bits{const_ivalue} > 1);
     EXPECT_FALSE(0 > bits{ivalue});
     EXPECT_FALSE(1 > bits{const_ivalue});
+
+    EXPECT_TRUE(bits{fvalue} > 0);
 }
 
 TEST_F(operators, greater_equal) {
@@ -106,6 +117,8 @@ TEST_F(operators, greater_equal) {
     EXPECT_TRUE(bits{const_ivalue} >= 2);
     EXPECT_FALSE(0 >= bits{ivalue});
     EXPECT_FALSE(1 >= bits{const_ivalue});
+
+    EXPECT_TRUE(bits{fvalue} >= 0.5f);
 }
 
 TEST_F(operators, less) {
@@ -113,6 +126,8 @@ TEST_F(operators, less) {
     EXPECT_TRUE(bits{const_ivalue} < 3);
     EXPECT_FALSE(1 < bits{ivalue});
     EXPECT_FALSE(2 < bits{const_ivalue});
+
+    EXPECT_TRUE(bits{1.f} < -1.f);
 }
 
 TEST_F(operators, less_equal) {
@@ -120,6 +135,8 @@ TEST_F(operators, less_equal) {
     EXPECT_TRUE(bits{const_ivalue} <= 2);
     EXPECT_FALSE(2 <= bits{ivalue});
     EXPECT_FALSE(3 <= bits{const_ivalue});
+
+    EXPECT_TRUE(bits{fvalue} <= 10.f);
 }
 
 TEST_F(operators, addition_assignment) {
