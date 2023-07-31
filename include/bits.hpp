@@ -184,7 +184,7 @@ private:
     template<class To, class From>
     static constexpr void bit_cast_to(To& to, const From& from) {
         static_assert(sizeof(To) == sizeof(From));
-        if constexpr (std::is_trivially_copy_assignable_v<To>) {
+        if constexpr (std::is_trivially_copy_assignable_v<To> && !std::is_same_v<To, bool>) {
             to = bit_cast<To>(from);
         } else {
             bit_copy(to, from);
