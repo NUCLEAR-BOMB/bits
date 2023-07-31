@@ -11,8 +11,25 @@ namespace {
 using operators = test_struct;
 
 TEST_F(operators, assigment) {
-    bits{ivalue} = 2;
+    bits{ivalue} = 2U;
     EXPECT_EQ(ivalue, 2);
+    bits{ivalue} = 10LL;
+    EXPECT_EQ(ivalue, 10);
+    bits{ivalue} = short(1);
+    EXPECT_EQ(ivalue, 1);
+
+    bits{fvalue} = 2.f;
+    EXPECT_EQ(fvalue, 2.f);
+    bits{fvalue} = std::uint8_t(255);
+    EXPECT_EQ(fvalue, 3.57331108403e-43f);
+
+    bits{ssvalue} = 1;
+    EXPECT_EQ(ssvalue, (small_struct{1, 0.f}));
+    bits{ssvalue} = 123ULL | 0x41800000ULL << 32;
+    EXPECT_EQ(ssvalue, (small_struct{123, 16.f}));
+
+    bits{lsvalue} = std::array{123ULL, 0x407C800000000000ULL};
+    EXPECT_EQ(lsvalue, (large_struct{123LL, 456.}));
 }
 
 TEST_F(operators, narrow_assigment) {

@@ -5,19 +5,29 @@
 #include <type_traits>
 #include <typeinfo>
 
-struct test_struct : ::testing::Test {
-    int ivalue = 1;
-    const int const_ivalue = 2;
-    float fvalue = 1.f;
-};
-
 struct small_struct {
     int ivalue = 1;
     float fvalue = 2.f;
 };
+constexpr bool operator==(const small_struct left, const small_struct right) {
+    return (left.ivalue == right.ivalue) && (left.fvalue == right.fvalue);
+}
+
 struct large_struct {
     long long lvalue = 1;
     double dvalue = 2.;
+};
+constexpr bool operator==(const large_struct left, const large_struct right) {
+    return (left.lvalue == right.lvalue) && (left.dvalue == right.dvalue);
+}
+
+struct test_struct : ::testing::Test {
+    int ivalue = 1;
+    const int const_ivalue = 2;
+    float fvalue = 1.f;
+
+    small_struct ssvalue{};
+    large_struct lsvalue{};
 };
 
 namespace custom_tests {

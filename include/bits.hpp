@@ -656,10 +656,15 @@ public:
         return ref_wrapper<RefTo>(m_value);
     }
 
-    template<class T>
+    template<class T, std::enable_if_t<!std::is_integral_v<T>, int> = 0>
     constexpr bits& operator=(const T& other) {
-        static_assert(sizeof(value_type) == sizeof(T));
-        expand_bit_cast_to(m_value, other);
+        static_assert(sizeof(value_type) == sizeof(T),
+            "The size of the assigned type must be equal to the size of the assigner");
+        bit_cast_to(m_value, other);
+        return *this;
+    }
+    constexpr bits& operator=(const value_as_uint_type other) {
+        bit_cast_to(m_value, other);
         return *this;
     }
 
