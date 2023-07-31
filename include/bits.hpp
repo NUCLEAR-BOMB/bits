@@ -13,6 +13,10 @@
     #include <version>
 #endif
 
+#ifdef _MSC_VER
+    #include <intrin.h>
+#endif
+
 #if defined(BITS_COMPILER_INTRINSICS) && BITS_COMPILER_INTRINSICS
     #define BITS_ENABLE_INTRINSICS 1
     #ifdef __has_builtin
@@ -82,6 +86,9 @@ private:
 
     using value_as_uint_type = type_as_uint<value_type>;
 
+    template<class ArrayType, class T>
+    using type_as_array = std::array<ArrayType, sizeof(T) / sizeof(ArrayType)>;
+
     template<class T, bool = std::is_enum_v<T>>
     struct safe_underlying_type_impl {
         using type = std::underlying_type_t<T>;
@@ -99,6 +106,14 @@ private:
 
     template<class T>
     static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(biggest_uint_t));
+
+    template<class T>
+    static constexpr bool is_array_that_convertible_as_uint = false;
+    template<class T, std::size_t N>
+    static constexpr bool is_array_that_convertible_as_uint<std::array<T, N>>
+        = is_convertible_as_uint<T>;
+    template<class T, std::size_t N>
+    static constexpr bool is_array_that_convertible_as_uint<T[N]> = is_convertible_as_uint<T>;
 
     template<class From, class To>
     static constexpr bool is_bit_convertible = is_like_integral<From> && is_like_integral<To>;
@@ -121,13 +136,14 @@ private:
     template<class T, std::size_t Size = denominator_of_power2(sizeof(T))>
     using as_max_size_array = std::array<size_as_uint<Size>, sizeof(T) / Size>;
 
-    template<class T, class UIntMax = biggest_uint_t>
-    using type_as_least_uintmax_array = std::array<UIntMax, sizeof(T) / sizeof(UIntMax)>;
-
     using bitsize_t = biggest_uint_t;
 
     template<class T>
     using array_value_type = std::decay_t<decltype(std::declval<T&>()[std::size_t(0)])>;
+
+    template<class To, class From>
+    using const_like = std::conditional_t<std::is_const_v<From>, std::add_const_t<To>,
+                                          std::remove_const_t<To>>;
 
     template<class T>
     static constexpr decltype(auto) unwrap(const bits<T>& val) {
@@ -242,6 +258,18 @@ private:
         }
     }
 
+    template<class T, class Fn>
+    static constexpr void bit_apply(T& value, Fn fn) {
+        auto buffer = bit_cast<std::array<unsigned char, sizeof(T)>>(value);
+        std::move(fn)(buffer);
+        bit_cast_to(value, buffer);
+    }
+    template<class T, class Fn>
+    static constexpr decltype(auto) bit_apply(const T& value, Fn fn) {
+        const auto buffer = bit_cast<std::array<unsigned char, sizeof(T)>>(value);
+        return std::move(fn)(buffer);
+    }
+
     template<bool SetTo, class T>
     static constexpr void bit_set(T& value) {
         if constexpr (std::is_integral_v<T>) {
@@ -264,27 +292,15 @@ private:
     }
     template<class T>
     static constexpr void bit_flip(T& value) {
-        if constexpr (is_like_integral<T>) {
-            using integer_t = safe_underlying_type<T>;
-            value = T(~integer_t(value));
-        } else if constexpr (is_integer_array<T>) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            value = bit_cast<T>(~bit_cast<uint_t>(value));
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (auto& x : value) {
                 bit_flip(x);
             }
         } else {
-            if constexpr (is_convertible_as_uint<T>) {
-                using uint_type = type_as_uint<T>;
-                const auto uint_value = bit_cast<uint_type>(value);
-                bit_cast_to(value, uint_type(~uint_value));
-            } else {
-                using first_type = type_as_least_uintmax_array<T>;
-                using rest_type = size_as_uint<sizeof(first_type) - sizeof(T)>;
-                bit_flip(*reinterpret_cast<first_type*>(std::addressof(value)));
-
-                std::byte* offset
-                    = reinterpret_cast<std::byte*>(std::addressof(value)) + sizeof(first_type);
-                bit_flip(*reinterpret_cast<rest_type*>(offset));
-            }
+            bit_apply(value, [](auto& x) { bit_flip(x); });
         }
     }
     template<class T>
@@ -301,8 +317,7 @@ private:
             const auto bit_index = index % (CHAR_BIT * sizeof(elem_type));
             bit_flip_at(value[array_index], bit_index);
         } else {
-            using byte_array = std::array<std::byte, sizeof(T)>;
-            bit_flip_at(reinterpret_cast<byte_array&>(value), index);
+            bit_apply(value, [&](auto& x) { bit_flip_at(x, index); });
         }
     }
 
@@ -311,24 +326,17 @@ private:
         if constexpr (std::is_integral_v<T>) {
             value &= ~(T(1) << index);
             value |= T(what_value) << index;
-        } else if constexpr (std::is_enum_v<T>) {
-            auto buffer = static_cast<std::underlying_type_t<T>>(value);
+        } else if constexpr (is_convertible_as_uint<T>) {
+            auto buffer = bit_cast<type_as_uint<T>>(value);
             bit_assign(buffer, index, what_value);
-            value = static_cast<T>(buffer);
-        } else if constexpr (is_integer_array<T>) {
+            bit_cast_to(value, buffer);
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             using elem_type = array_value_type<T>;
             const auto array_index = index / (CHAR_BIT * sizeof(elem_type));
             const auto bit_index = index % (CHAR_BIT * sizeof(elem_type));
             bit_assign(value[array_index], bit_index, what_value);
         } else {
-            using byte_array = std::array<std::byte, sizeof(T)>;
-            if (is_constant_evaluated() && std::is_trivially_copy_assignable_v<T>) {
-                auto buffer = bit_cast<byte_array>(value);
-                bit_assign(buffer, index, what_value);
-                value = bit_cast<T>(buffer);
-                return;
-            }
-            bit_assign(reinterpret_cast<byte_array&>(value), index, what_value);
+            bit_apply(value, [&](auto& x) { return bit_assign(x, index, what_value); });
         }
     }
     template<class T>
@@ -353,26 +361,18 @@ private:
             using as_uint_type = type_as_uint<T>;
             return test_function(bit_cast<as_uint_type>(value));
         } else {
-            using uintmax_array_type
-                = std::array<biggest_uint_t, sizeof(T) / sizeof(biggest_uint_t)>;
-            const bool first_result
-                = test_function(*reinterpret_cast<uintmax_array_type*>(std::addressof(value)));
-            if (!first_result) return false;
-
-            using padding_type = size_as_uint<sizeof(T) % sizeof(biggest_uint_t)>;
-            const auto* padding_ptr
-                = reinterpret_cast<std::byte*>(&value) + sizeof(uintmax_array_type);
-            return test_function(*reinterpret_cast<padding_type*>(padding_ptr));
+            return bit_apply(value, [](const auto& x) { return test_function(x); });
         }
     }
 
     template<class T>
     static constexpr bool bit_test_all(const T& value) {
-        if constexpr (is_like_integral<T>) {
-            return value == T(-1);
-        } else if constexpr (is_integer_array<T>) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            return bit_cast<uint_t>(value) == uint_t(-1);
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (const auto x : value) {
-                if (x != T(-1)) return false;
+                if (bit_test_all(x)) return false;
             }
             return true;
         } else {
@@ -382,11 +382,12 @@ private:
 
     template<class T>
     static constexpr bool bit_test_any(const T& value) {
-        if constexpr (is_like_integral<T>) {
-            return value != T(0);
-        } else if constexpr (is_integer_array<T>) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            return bit_cast<uint_t>(value) != uint_t(0);
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (const auto x : value) {
-                if (x != T(0)) return true;
+                if (bit_test_any(x)) return true;
             }
             return false;
         } else {
@@ -395,11 +396,12 @@ private:
     }
     template<class T>
     static constexpr bool bit_test_none(const T& value) {
-        if constexpr (is_like_integral<T>) {
-            return value == T(0);
-        } else if constexpr (is_integer_array<T>) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            return bit_cast<uint_t>(value) == uint_t(0);
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (const auto x : value) {
-                if (x != T(0)) return false;
+                if (bit_test_none(x)) return false;
             }
             return true;
         } else {
@@ -419,6 +421,52 @@ private:
     static constexpr void bit_emplace(What& what_emplace, const T& value) {
         static_assert(sizeof(What) == sizeof(T));
         bit_cast_to(what_emplace, value);
+    }
+    template<class T>
+    static constexpr bitsize_t bit_count_for_integer(T value) {
+#ifdef __cpp_lib_bitops
+        return std::popcount(value_as_uint);
+#else
+        if (!is_constant_evaluated()) {
+    #if defined(_MSC_VER)
+            if constexpr (sizeof(T) <= sizeof(unsigned short)) {
+                return __popcnt16(value);
+            } else if constexpr (sizeof(T) <= sizeof(unsigned int)) {
+                return __popcnt(value);
+            } else if constexpr (sizeof(T) <= sizeof(unsigned long long)) {
+                return __popcnt64(value);
+            }
+    #elif BITS_HAS_BUILTIN(__builtin_popcount)
+            if constexpr (sizeof(T) <= sizeof(unsigned int)) {
+                return __builtin_popcount(value);
+            } else if constexpr (sizeof(T) <= sizeof(unsigned long)) {
+                return __builtin_popcountl(value);
+            } else if constexpr (sizeof(T) <= sizeof(unsigned long long)) {
+                return __builtin_popcountll(value);
+            }
+    #endif
+#endif
+        }
+        bitsize_t count = 0;
+        for (; value != 0; ++count) {
+            value &= value - 1;
+        }
+        return count;
+    }
+
+    template<class T>
+    static constexpr bitsize_t bit_count(const T& value) {
+        if constexpr (is_convertible_as_uint<T>) {
+            return bit_count_for_integer(bit_cast<type_as_uint<T>>(value));
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
+            bitsize_t count = 0;
+            for (const auto elem : value) {
+                count += bit_count(elem);
+            }
+            return count;
+        } else {
+            return bit_apply(value, [](const auto& x) { return bit_count(x); });
+        }
     }
 
     template<class T>
@@ -614,6 +662,8 @@ public:
         expand_bit_cast_to(m_value, other);
         return *this;
     }
+
+    constexpr bitsize_t count() const { return bit_count(m_value); }
 
     constexpr void set() { bit_set<true>(m_value); }
     constexpr void reset() { bit_set<false>(m_value); }

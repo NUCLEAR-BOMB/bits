@@ -23,8 +23,7 @@ struct large_struct {
 namespace custom_tests {
 
 template<class Expected, class Received>
-::testing::AssertionResult value_and_type_equals(const char* lexpr,
-                                                 const char* rexpr,
+::testing::AssertionResult value_and_type_equals(const char* lexpr, const char* rexpr,
                                                  const Expected& expected,
                                                  const Received& received) {
     if constexpr (!std::is_same_v<Expected, Received>) {
@@ -51,9 +50,10 @@ template<class Expected, class Received>
 #define EXPECT_STRICT_EQ(expected, received) \
     EXPECT_PRED_FORMAT2(::custom_tests::value_and_type_equals, expected, received)
 
-#define EXPECT_CONST_STRICT_EQ(expr1, expr2) { \
-        constexpr decltype(auto) _bits_left_value_ = (expr1); \
-        constexpr decltype(auto) _bits_right_value_ = (expr2); \
+#define EXPECT_CONST_STRICT_EQ(expr1, expr2)                     \
+    {                                                            \
+        constexpr decltype(auto) _bits_left_value_ = (expr1);    \
+        constexpr decltype(auto) _bits_right_value_ = (expr2);   \
         EXPECT_STRICT_EQ(_bits_left_value_, _bits_right_value_); \
     }
 

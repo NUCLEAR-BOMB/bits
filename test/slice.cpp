@@ -1,6 +1,5 @@
 #include <bits.hpp>
 #include <gtest/gtest.h>
-
 #include <test_tools.hpp>
 
 namespace {

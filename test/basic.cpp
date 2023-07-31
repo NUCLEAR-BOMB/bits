@@ -96,7 +96,6 @@ TEST_F(basic, narrow_as) {
     EXPECT_CONST_STRICT_EQ(bits{1}.narrow().as<unsigned>(), 1U);
 }
 
-
 TEST_F(basic, set) {
     bits{ivalue}.set();
     EXPECT_EQ(ivalue, -1);
@@ -314,6 +313,15 @@ TEST_F(basic, emplace) {
     bits{value}.emplace<float, int>(5.f, 1);
     EXPECT_EQ(value.ivalue, 1084227584);
     EXPECT_EQ(value.fvalue, 1.40129846432e-45f);
+}
+
+TEST_F(basic, count) {
+    EXPECT_EQ(bits{ivalue}.count(), 1);
+    EXPECT_EQ(bits{0b111}.count(), 3);
+    EXPECT_EQ(bits{0b1010'1010}.count(), 4);
+
+    const std::array<int, 4> arr{1, 2, 3, 4};
+    EXPECT_EQ(bits{arr}.count(), 5);
 }
 
 } // namespace
