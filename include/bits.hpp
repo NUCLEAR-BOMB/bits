@@ -299,7 +299,7 @@ private:
     static constexpr void bit_flip(T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             using uint_t = type_as_uint<T>;
-            value = bit_cast<T>(~bit_cast<uint_t>(value));
+            value = bit_cast<T>(uint_t(~bit_cast<uint_t>(value)));
         } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (auto& x : value) {
                 bit_flip(x);
@@ -360,16 +360,6 @@ private:
         }
     }
 
-    template<auto* test_function, class T>
-    static constexpr bool bit_test_non_trivial_base(const T& value) {
-        if constexpr (is_convertible_as_uint<T>) {
-            using as_uint_type = type_as_uint<T>;
-            return test_function(bit_cast<as_uint_type>(value));
-        } else {
-            return bit_apply(value, [](const auto& x) { return test_function(x); });
-        }
-    }
-
     template<class T>
     static constexpr bool bit_test_all(const T& value) {
         if constexpr (is_convertible_as_uint<T>) {
@@ -377,11 +367,11 @@ private:
             return bit_cast<uint_t>(value) == uint_t(-1);
         } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (const auto x : value) {
-                if (bit_test_all(x)) return false;
+                if (!bit_test_all(x)) return false;
             }
             return true;
         } else {
-            return bit_test_non_trivial_base<&bit_test_all<T>>(value);
+            return bit_apply(value, [](const auto& x) { return bit_test_all(x); });
         }
     }
 
@@ -396,7 +386,7 @@ private:
             }
             return false;
         } else {
-            return bit_test_non_trivial_base<&bit_test_any<T>>(value);
+            return bit_apply(value, [](const auto& x) { return bit_test_any(x); });
         }
     }
     template<class T>
@@ -406,11 +396,11 @@ private:
             return bit_cast<uint_t>(value) == uint_t(0);
         } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (const auto x : value) {
-                if (bit_test_none(x)) return false;
+                if (!bit_test_none(x)) return false;
             }
             return true;
         } else {
-            return bit_test_non_trivial_base<&bit_test_none<T>>(value);
+            return bit_apply(value, [](const auto& x) { return bit_test_none(x); });
         }
     }
 
@@ -528,7 +518,7 @@ private:
     public:
         constexpr ref_wrapper(Value& value) : value(value) {}
 
-        template<class T>
+        template<class T = RefTo>
         constexpr ref_wrapper& operator=(T&& other) {
             static_assert(sizeof(T) == sizeof(RefTo));
             if constexpr (std::is_trivially_assignable_v<RefTo, T>) {
@@ -683,6 +673,7 @@ public:
 
     template<class RefTo>
     [[nodiscard]] constexpr ref_wrapper<RefTo> as_refw() {
+        static_assert(sizeof(value_type) == sizeof(RefTo));
         return ref_wrapper<RefTo>(m_value);
     }
 

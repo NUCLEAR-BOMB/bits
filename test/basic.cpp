@@ -16,6 +16,9 @@ TEST_F(basic, constructor) {
 
     (void)bits{1};
     (void)bits{1.f};
+
+    (void)bits{lsvalue};
+    (void)bits{ssvalue};
 }
 
 TEST_F(basic, value) {
@@ -32,6 +35,7 @@ TEST_F(basic, as_uint) {
     EXPECT_STRICT_EQ(bits{2LL}.as_uint(), 2ULL);
 
     EXPECT_STRICT_EQ(bits{1.f}.as_uint(), 0x3f800000U);
+    EXPECT_STRICT_EQ(bits{ssvalue}.as_uint(), 1ULL | 0x40000000ULL << 32);
 }
 
 TEST_F(basic, as_int) {
@@ -40,6 +44,7 @@ TEST_F(basic, as_int) {
     EXPECT_STRICT_EQ(bits{1ULL}.as_int(), 1LL);
 
     EXPECT_STRICT_EQ(bits{2.f}.as_int(), 0x40000000);
+    EXPECT_STRICT_EQ(bits{ssvalue}.as_int(), 1LL | 0x40000000LL << 32);
 }
 
 TEST_F(basic, as) {
@@ -49,6 +54,7 @@ TEST_F(basic, as) {
 
     EXPECT_STRICT_EQ(bits{0x40000000}.as<float>(), 2.f);
     EXPECT_STRICT_EQ(bits{1.f}.as<unsigned>(), 0x3f800000U);
+    EXPECT_STRICT_EQ(bits{ssvalue}.as<long long>(), 1LL | 0x40000000LL << 32);
 
     constexpr bool compile_time_as = [] {
         int val = -1;
@@ -70,6 +76,10 @@ TEST_F(basic, as_ref) {
     flt_ref = 1.f;
     EXPECT_STRICT_EQ(bits{ivalue}.as<float>(), 1.f);
 
+    std::uint64_t& ull_ref = bits{ssvalue}.as_ref<std::uint64_t>();
+    ull_ref = 0;
+    EXPECT_EQ(ssvalue, (small_struct{0, 0.f}));
+
     constexpr bool compile_time_as_ref = [] {
         int val = 1;
         if (bits{val}.as_ref<int>() != 1) return false;
@@ -80,9 +90,17 @@ TEST_F(basic, as_ref) {
 }
 
 TEST_F(basic, as_bytes) {
-    EXPECT_EQ(bits{1}.as_bytes(), (std::array<std::uint8_t, 4>{1, 0, 0, 0}));
-    EXPECT_EQ(bits{0x00'00'01'FF}.as_bytes(), (std::array<std::uint8_t, 4>{255, 1, 0, 0}));
-    EXPECT_EQ(bits{1.f}.as_bytes(), (std::array<std::uint8_t, 4>{0, 0, 128, 63}));
+    using byte_array4 = std::array<std::uint8_t, 4>;
+    using byte_array8 = std::array<std::uint8_t, 8>;
+    using byte_array16 = std::array<std::uint8_t, 16>;
+
+    EXPECT_EQ(bits{1}.as_bytes(), (byte_array4{1, 0, 0, 0}));
+    EXPECT_EQ(bits{0x00'00'01'FF}.as_bytes(), (byte_array4{255, 1, 0, 0}));
+    EXPECT_EQ(bits{1.f}.as_bytes(), (byte_array4{0, 0, 128, 63}));
+
+    EXPECT_EQ(bits{ssvalue}.as_bytes(), (byte_array8{1, 0, 0, 0, 0, 0, 0, 64}));
+    EXPECT_EQ(bits{lsvalue}.as_bytes(),
+        (byte_array16{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64}));
 
     constexpr bool compile_time_as_bytes = [] {
         const int val = 0x03'02'01'00;
@@ -98,6 +116,8 @@ TEST_F(basic, narrow_as) {
     EXPECT_STRICT_EQ(bits{short(5)}.narrow().as<int>(), 5);
     EXPECT_STRICT_EQ(bits{10LL}.narrow().as<short>(), short(10));
     EXPECT_STRICT_EQ(bits{1.f}.narrow().as<char>(), char(0));
+    EXPECT_STRICT_EQ(bits{ssvalue}.narrow().as<int>(), 1);
+    EXPECT_STRICT_EQ(bits{lsvalue}.narrow().as<long long>(), 1LL);
 
     EXPECT_CONST_STRICT_EQ(bits{1}.narrow().as<short>(), short(1));
     EXPECT_CONST_STRICT_EQ(bits{1}.narrow().as<long long>(), 1LL);
@@ -110,7 +130,16 @@ TEST_F(basic, set) {
 
     bits{fvalue}.set();
     EXPECT_TRUE(std::isnan(fvalue));
-    EXPECT_EQ(bits{fvalue}, 0xFFFFFFFF);
+    EXPECT_EQ(bits{fvalue}, 0xFFFFFFFFU);
+
+    bits{ssvalue}.set();
+    EXPECT_EQ(ssvalue.ivalue, -1);
+    EXPECT_TRUE(std::isnan(ssvalue.fvalue));
+
+    bits{lsvalue}.set();
+    EXPECT_EQ(lsvalue.lvalue, -1LL);
+    EXPECT_TRUE(std::isnan(lsvalue.dvalue));
+    EXPECT_EQ(bits{lsvalue.dvalue}, 0xFFFFFFFFFFFFFFFFULL);
 
     constexpr bool compile_time_set = [] {
         unsigned val = 2;
@@ -131,6 +160,14 @@ TEST_F(basic, reset) {
 
     bits{fvalue}.reset();
     EXPECT_EQ(fvalue, 0.f);
+
+    bits{ssvalue}.reset();
+    EXPECT_EQ(ssvalue.ivalue, 0);
+    EXPECT_EQ(ssvalue.fvalue, 0.f);
+
+    bits{lsvalue}.reset();
+    EXPECT_EQ(lsvalue.lvalue, 0LL);
+    EXPECT_EQ(lsvalue.dvalue, 0.);
 
     constexpr bool compile_time_reset = [] {
         unsigned val = 100;
@@ -153,6 +190,14 @@ TEST_F(basic, flip) {
 
     bits{fvalue}.flip();
     EXPECT_EQ(fvalue, -3.99999976158f);
+
+    bits{ssvalue}.flip();
+    EXPECT_EQ(ssvalue.ivalue, -2);
+    EXPECT_EQ(ssvalue.fvalue, -1.99999988079f);
+
+    bits{lsvalue}.flip();
+    EXPECT_EQ(lsvalue.lvalue, -2LL);
+    EXPECT_EQ(lsvalue.dvalue, -1.9999999999999997779553950749686919152736663818359375);
 
     constexpr bool compile_time_flip = [] {
         int val = 0b1010'1010;
@@ -181,6 +226,16 @@ TEST_F(basic, flip_at) {
     bits{fvalue}.flip_at(30);
     EXPECT_TRUE(std::isinf(fvalue));
 
+    bits{ssvalue}.flip_at(0);
+    EXPECT_EQ(ssvalue.ivalue, 0);
+    bits{ssvalue}.flip_at(63);
+    EXPECT_EQ(ssvalue.fvalue, -2.f);
+
+    bits{lsvalue}.flip_at(1);
+    EXPECT_EQ(lsvalue.lvalue, 3);
+    bits{lsvalue}.flip_at(63 + 53);
+    EXPECT_EQ(lsvalue.dvalue, 4.);
+
     std::array arr{0b1001, 0b0110};
     bits{arr}.flip_at(0);
     EXPECT_EQ(arr[0], 0b1000);
@@ -197,6 +252,15 @@ TEST_F(basic, all) {
     bits{fvalue} = 0xFFFFFFFF;
     EXPECT_TRUE(bits{fvalue}.all());
 
+    EXPECT_FALSE(bits{ssvalue}.all());
+    bits{ssvalue} = 0xFFFFFFFFFFFFFFFFULL;
+    EXPECT_TRUE(bits{ssvalue}.all());
+
+    EXPECT_FALSE(bits{lsvalue}.all());
+    bits{lsvalue.lvalue} = 0xFFFFFFFFFFFFFFFFULL;
+    bits{lsvalue.dvalue} = 0xFFFFFFFFFFFFFFFFULL;
+    EXPECT_TRUE(bits{lsvalue}.all());
+
     constexpr bool compile_time_all = [] {
         int val = 1;
         if (bits{val}.all()) return false;
@@ -205,6 +269,11 @@ TEST_F(basic, all) {
         return true;
     }();
     EXPECT_TRUE(compile_time_all);
+
+    std::array<int, 4> arr{1, 2, 3, 4};
+    EXPECT_FALSE(bits{arr}.all());
+    arr = {-1, -1, -1, -1};
+    EXPECT_TRUE(bits{arr}.all());
 }
 
 TEST_F(basic, any) {
@@ -216,6 +285,15 @@ TEST_F(basic, any) {
     fvalue = 0.f;
     EXPECT_FALSE(bits{fvalue}.any());
 
+    EXPECT_TRUE(bits{ssvalue}.any());
+    bits{ssvalue} = 0;
+    EXPECT_FALSE(bits{ssvalue}.any());
+
+    EXPECT_TRUE(bits{lsvalue}.any());
+    bits{lsvalue.lvalue} = 0;
+    bits{lsvalue.dvalue} = 0;
+    EXPECT_FALSE(bits{lsvalue}.any());
+
     constexpr bool compile_time_any = [] {
         int val = 0;
         if (bits{val}.any()) return false;
@@ -226,6 +304,11 @@ TEST_F(basic, any) {
         return true;
     }();
     EXPECT_TRUE(compile_time_any);
+
+    std::array<long long, 2> arr{123, 456};
+    EXPECT_TRUE(bits{arr}.any());
+    arr = {0, 0};
+    EXPECT_FALSE(bits{arr}.any());
 }
 
 TEST_F(basic, none) {
@@ -237,6 +320,16 @@ TEST_F(basic, none) {
     fvalue = 0.f;
     EXPECT_TRUE(bits{fvalue}.none());
 
+    EXPECT_FALSE(bits{ssvalue}.none());
+    ssvalue.ivalue = 0;
+    ssvalue.fvalue = 0.f;
+    EXPECT_TRUE(bits{ssvalue}.none());
+
+    EXPECT_FALSE(bits{lsvalue}.none());
+    lsvalue.lvalue = 0;
+    lsvalue.dvalue = 0.;
+    EXPECT_TRUE(bits{lsvalue}.none());
+
     constexpr bool compile_time_none = [] {
         int val = 5;
         if (bits{val}.none()) return false;
@@ -247,6 +340,11 @@ TEST_F(basic, none) {
         return true;
     }();
     EXPECT_TRUE(compile_time_none);
+
+    std::array<unsigned, 5> arr{0, 2, 3, 4, 0};
+    EXPECT_FALSE(bits{arr}.none());
+    arr = {0, 0, 0, 0, 0};
+    EXPECT_TRUE(bits{arr}.none());
 }
 
 TEST_F(basic, copy_to) {
@@ -291,6 +389,8 @@ TEST_F(basic, copy) {
 
     EXPECT_STRICT_EQ(bits{1}.copy(), 1);
     EXPECT_STRICT_EQ(bits{1.f}.copy(), 1.f);
+    EXPECT_STRICT_EQ(bits{ssvalue}.copy(), ssvalue);
+    EXPECT_STRICT_EQ(bits{lsvalue}.copy(), lsvalue);
 
     constexpr bool compile_time_copy = [] {
         int val = 2;
@@ -318,6 +418,10 @@ TEST_F(basic, as_refw) {
     float_ref_wrapper = 0x40400000U;
     EXPECT_EQ(fvalue, 3.f);
 
+    bits{ssvalue}.as_refw<std::array<short, 4>>() = {1, 2, 3, 4};
+    EXPECT_EQ(ssvalue.ivalue, 131073);
+    EXPECT_EQ(ssvalue.fvalue, 3.67346188527e-40f);
+
     constexpr bool compile_time_as_refw = [] {
         int val = 12222;
         auto refw = bits{val}.as_refw<unsigned>();
@@ -339,6 +443,12 @@ TEST_F(basic, as_array) {
     const auto int_arr = bits{fvalue}.as_array<int>();
     EXPECT_EQ(int_arr, (std::array<int, 1>{0x3f800000}));
 
+    const auto int_arr2 = bits{ssvalue}.as_array<int>();
+    EXPECT_EQ(int_arr2, (std::array<int, 2>{1, 0x40000000}));
+
+    const auto longlong_arr = bits{lsvalue}.as_array<long long>();
+    EXPECT_EQ(longlong_arr, (std::array<long long, 2>{1, 0x4000000000000000}));
+
     constexpr bool compile_time_as_array = [] {
         int val = 1234 << 16 | 5678;
         auto valw = bits{val}.as_array<short>();
@@ -349,17 +459,17 @@ TEST_F(basic, as_array) {
 }
 
 TEST_F(basic, emplace) {
-    struct {
-        int ivalue = 1;
-        float fvalue = 2.f;
-    } value;
-    bits{value}.emplace<int, float>(10, 2.f);
-    EXPECT_EQ(value.ivalue, 10);
-    EXPECT_EQ(value.fvalue, 2.f);
+    bits{ssvalue}.emplace<int, float>(10, 2.f);
+    EXPECT_EQ(ssvalue.ivalue, 10);
+    EXPECT_EQ(ssvalue.fvalue, 2.f);
 
-    bits{value}.emplace<float, int>(5.f, 1);
-    EXPECT_EQ(value.ivalue, 1084227584);
-    EXPECT_EQ(value.fvalue, 1.40129846432e-45f);
+    bits{ssvalue}.emplace<float, int>(5.f, 1);
+    EXPECT_EQ(ssvalue.ivalue, 1084227584);
+    EXPECT_EQ(ssvalue.fvalue, 1.40129846432e-45f);
+
+    bits{lsvalue}.emplace(1234567890LL, 1e+200);
+    EXPECT_EQ(lsvalue.lvalue, 1234567890LL);
+    EXPECT_EQ(lsvalue.dvalue, 1e+200);
 
     bits{ivalue}.emplace(2);
     EXPECT_EQ(ivalue, 2);
@@ -376,6 +486,9 @@ TEST_F(basic, count) {
     EXPECT_EQ(bits{arr}.count(), 5);
 
     EXPECT_EQ(bits{fvalue}.count(), 7);
+
+    EXPECT_EQ(bits{ssvalue}.count(), 2);
+    EXPECT_EQ(bits{lsvalue}.count(), 2);
 }
 
 } // namespace

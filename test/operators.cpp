@@ -43,6 +43,14 @@ TEST_F(operators, narrow_assigment) {
     bits{fvalue}.narrow() = 2.f;
     EXPECT_EQ(fvalue, 2.f);
 
+    bits{ssvalue}.narrow() = 1;
+    EXPECT_EQ(ssvalue.ivalue, 1);
+    EXPECT_EQ(ssvalue.fvalue, 0.f);
+
+    bits{lsvalue}.narrow() = 100;
+    EXPECT_EQ(lsvalue.lvalue, 100);
+    EXPECT_EQ(lsvalue.dvalue, 0.);
+
     constexpr bool compile_time_narrow_assigment = [] {
         int val = 0;
         bits{val}.narrow() = 2;
@@ -71,6 +79,10 @@ TEST_F(operators, equal) {
 
     EXPECT_TRUE(bits{fvalue} == 1.f);
     EXPECT_TRUE(bits{fvalue} == 0x3f800000);
+
+    EXPECT_TRUE(bits{ssvalue} == (small_struct{1, 2.f}));
+
+    EXPECT_TRUE(bits{lsvalue} == (large_struct{1, 2.}));
 
     constexpr bool compile_time_equal = [] {
         int val = 2;
@@ -180,6 +192,12 @@ TEST_F(operators, addition_assignment) {
     EXPECT_EQ(fvalue, 2.f);
     bits{fvalue} += 1 << 22;
     EXPECT_EQ(fvalue, 3.f);
+
+    bits{ssvalue} += 1;
+    EXPECT_EQ(ssvalue.ivalue, 2);
+    bits{ssvalue} += 1ULL << (31 + 24);
+    EXPECT_EQ(ssvalue.ivalue, 2);
+    EXPECT_EQ(ssvalue.fvalue, 4.f);
 }
 
 TEST_F(operators, subtraction_assignment) {

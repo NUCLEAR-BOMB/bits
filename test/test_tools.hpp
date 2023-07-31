@@ -6,16 +6,16 @@
 #include <typeinfo>
 
 struct small_struct {
-    int ivalue = 1;
-    float fvalue = 2.f;
+    int ivalue;
+    float fvalue;
 };
 constexpr bool operator==(const small_struct left, const small_struct right) {
     return (left.ivalue == right.ivalue) && (left.fvalue == right.fvalue);
 }
 
 struct large_struct {
-    long long lvalue = 1;
-    double dvalue = 2.;
+    long long lvalue;
+    double dvalue;
 };
 constexpr bool operator==(const large_struct left, const large_struct right) {
     return (left.lvalue == right.lvalue) && (left.dvalue == right.dvalue);
@@ -26,8 +26,8 @@ struct test_struct : ::testing::Test {
     const int const_ivalue = 2;
     float fvalue = 1.f;
 
-    small_struct ssvalue{};
-    large_struct lsvalue{};
+    small_struct ssvalue{1, 2.f};
+    large_struct lsvalue{1, 2.};
 };
 
 namespace custom_tests {
