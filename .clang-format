@@ -23,7 +23,7 @@ Cpp11BracedListStyle: true
 
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations: No
+AlwaysBreakTemplateDeclarations: Yes
 BreakBeforeConceptDeclarations: Always
 BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true

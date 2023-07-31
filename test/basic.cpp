@@ -281,12 +281,13 @@ TEST_F(basic, as_bytes_ref) {
 TEST_F(basic, copy) {
     struct non_copyable_t {
         int value = 123;
+        non_copyable_t(const non_copyable_t&) = delete;
         non_copyable_t& operator=(const non_copyable_t&) = delete;
     } non_copyable{};
 
-    const non_copyable_t copy_of_non_copyable = bits{non_copyable}.copy();
-    EXPECT_EQ(copy_of_non_copyable.value, 123);
-    EXPECT_NE(&copy_of_non_copyable.value, &non_copyable.value);
+    const auto copy_of_non_copyable = bits{non_copyable}.copy();
+    EXPECT_EQ(copy_of_non_copyable->value, 123);
+    EXPECT_NE(&copy_of_non_copyable->value, &non_copyable.value);
 
     EXPECT_STRICT_EQ(bits{1}.copy(), 1);
     EXPECT_STRICT_EQ(bits{1.f}.copy(), 1.f);

@@ -41,7 +41,8 @@
     #define BITS_HAS_IS_CONSTANT_EVALUATED_INTRINSICS 0
 #endif
 
-template<class Value = int> class bits {
+template<class Value = int>
+class bits {
 public:
     using value_type = std::remove_const_t<Value>;
 
@@ -54,10 +55,12 @@ private:
     //	template<> struct size_as_uint_t<8> { using type = std::uint64_t; };
     //#endif
 
-    template<class T> struct type_identity {
+    template<class T>
+    struct type_identity {
         using type = T;
     };
-    template<class T> using type_identity_t = typename type_identity<T>::type;
+    template<class T>
+    using type_identity_t = typename type_identity<T>::type;
 
 #if defined(UINT64_MAX) && UINT64_MAX <= UINTMAX_MAX
     using biggest_uint_t = std::uint64_t;
@@ -65,7 +68,8 @@ private:
     using biggest_uint_t = std::uintmax_t;
 #endif
 
-    template<std::size_t N> static decltype(auto) size_as_uint_impl() {
+    template<std::size_t N>
+    static decltype(auto) size_as_uint_impl() {
         if constexpr (N <= 1) return std::uint8_t{};
         else if constexpr (N <= 2) return std::uint16_t{};
         else if constexpr (N <= 4) return std::uint32_t{};
@@ -73,67 +77,82 @@ private:
         else return biggest_uint_t{};
     }
 
-    template<std::size_t N> using size_as_uint = decltype(size_as_uint_impl<N>());
-    template<class T> using type_as_uint = size_as_uint<sizeof(T)>;
-    template<class T> using type_as_int = std::make_signed_t<type_as_uint<T>>;
+    template<std::size_t N>
+    using size_as_uint = decltype(size_as_uint_impl<N>());
+    template<class T>
+    using type_as_uint = size_as_uint<sizeof(T)>;
+    template<class T>
+    using type_as_int = std::make_signed_t<type_as_uint<T>>;
 
     using value_as_uint_type = type_as_uint<value_type>;
 
-    template<class ArrayType, class T> using type_as_array
-        = std::array<ArrayType, sizeof(T) / sizeof(ArrayType)>;
+    template<class ArrayType, class T>
+    using type_as_array = std::array<ArrayType, sizeof(T) / sizeof(ArrayType)>;
 
-    template<class T, bool = std::is_enum_v<T>> struct safe_underlying_type_impl {
+    template<class T, bool = std::is_enum_v<T>>
+    struct safe_underlying_type_impl {
         using type = std::underlying_type_t<T>;
     };
-    template<class T> struct safe_underlying_type_impl<T, false> {
+    template<class T>
+    struct safe_underlying_type_impl<T, false> {
         using type = T;
     };
 
-    template<class T> using safe_underlying_type = typename safe_underlying_type_impl<T>::type;
+    template<class T>
+    using safe_underlying_type = typename safe_underlying_type_impl<T>::type;
 
-    template<class T> static constexpr bool is_like_integral
-        = std::is_integral_v<T> || std::is_enum_v<T>;
+    template<class T>
+    static constexpr bool is_like_integral = std::is_integral_v<T> || std::is_enum_v<T>;
 
-    template<class T> static constexpr bool is_convertible_as_uint
-        = (sizeof(T) <= sizeof(biggest_uint_t));
+    template<class T>
+    static constexpr bool is_convertible_as_uint = (sizeof(T) <= sizeof(biggest_uint_t));
 
-    template<class T> static constexpr bool is_array_that_convertible_as_uint = false;
+    template<class T>
+    static constexpr bool is_array_that_convertible_as_uint = false;
     template<class T, std::size_t N>
     static constexpr bool is_array_that_convertible_as_uint<std::array<T, N>>
         = is_convertible_as_uint<T>;
     template<class T, std::size_t N>
     static constexpr bool is_array_that_convertible_as_uint<T[N]> = is_convertible_as_uint<T>;
 
-    template<class From, class To> static constexpr bool is_bit_convertible
-        = is_like_integral<From> && is_like_integral<To>;
+    template<class From, class To>
+    static constexpr bool is_bit_convertible = is_like_integral<From> && is_like_integral<To>;
 
-    template<class T> static constexpr T denominator_of_power2(const T x) {
+    template<class T>
+    static constexpr T denominator_of_power2(const T x) {
         const auto result = T(x & (~(x - 1)));
         return result > sizeof(biggest_uint_t) ? sizeof(biggest_uint_t) : result;
     }
 
-    template<class T> static constexpr bool is_integer_array = false;
-    template<class T, std::size_t N> static constexpr bool is_integer_array<std::array<T, N>>
+    template<class T>
+    static constexpr bool is_integer_array = false;
+    template<class T, std::size_t N>
+    static constexpr bool is_integer_array<std::array<T, N>>
         = std::is_integral_v<T> || std::is_enum_v<T>;
 
-    template<class T, std::size_t N> static constexpr bool is_integer_array<T[N]>
-        = std::is_integral_v<T> || std::is_enum_v<T>;
+    template<class T, std::size_t N>
+    static constexpr bool is_integer_array<T[N]> = std::is_integral_v<T> || std::is_enum_v<T>;
 
     template<class T, std::size_t Size = denominator_of_power2(sizeof(T))>
     using as_max_size_array = std::array<size_as_uint<Size>, sizeof(T) / Size>;
 
     using bitsize_t = biggest_uint_t;
 
-    template<class T> using array_value_type
-        = std::decay_t<decltype(std::declval<T&>()[std::size_t(0)])>;
+    template<class T>
+    using array_value_type = std::decay_t<decltype(std::declval<T&>()[std::size_t(0)])>;
 
-    template<class To, class From> using const_like = std::conditional_t<std::is_const_v<From>,
-        std::add_const_t<To>, std::remove_const_t<To>>;
+    template<class To, class From>
+    using const_like = std::conditional_t<std::is_const_v<From>, std::add_const_t<To>,
+        std::remove_const_t<To>>;
 
-    template<class T> static constexpr decltype(auto) unwrap(const bits<T>& val) {
+    template<class T>
+    static constexpr decltype(auto) unwrap(const bits<T>& val) {
         return val.value();
     }
-    template<class T> static constexpr decltype(auto) unwrap(const T& val) { return val; }
+    template<class T>
+    static constexpr decltype(auto) unwrap(const T& val) {
+        return val;
+    }
 
     static constexpr bool is_constant_evaluated() {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -145,7 +164,8 @@ private:
 #endif
     }
 
-    template<class To, class From> static constexpr void bit_copy(To& dest, const From& src) {
+    template<class To, class From>
+    static constexpr void bit_copy(To& dest, const From& src) {
         static_assert(sizeof(To) == sizeof(From));
         if constexpr (is_integer_array<To> && is_like_integral<From>) {
             using elem_type = array_value_type<To>;
@@ -159,7 +179,8 @@ private:
         }
     }
 
-    template<class To, class From> static constexpr To bit_cast(const From& from) {
+    template<class To, class From>
+    static constexpr To bit_cast(const From& from) {
         static_assert(sizeof(To) == sizeof(From));
 #ifdef __cpp_lib_bit_cast
         return std::bit_cast<To>(from);
@@ -190,8 +211,8 @@ private:
             bit_copy(to, from);
         }
     }
-    template<class To, class From> static constexpr void bit_cast_to(const To&, const From&)
-        = delete;
+    template<class To, class From>
+    static constexpr void bit_cast_to(const To&, const From&) = delete;
 
     template<class To, class From>
     static constexpr void expand_bit_cast_to(To& to, const From& from) {
@@ -237,7 +258,8 @@ private:
         }
     }
 
-    template<class T, class Fn> static constexpr void bit_apply(T& value, Fn fn) {
+    template<class T, class Fn>
+    static constexpr void bit_apply(T& value, Fn fn) {
         auto buffer = bit_cast<std::array<unsigned char, sizeof(T)>>(value);
         std::move(fn)(buffer);
         bit_cast_to(value, buffer);
@@ -248,7 +270,8 @@ private:
         return std::move(fn)(buffer);
     }
 
-    template<bool SetTo, class T> static constexpr void bit_set(T& value) {
+    template<bool SetTo, class T>
+    static constexpr void bit_set(T& value) {
         if constexpr (std::is_integral_v<T>) {
             value = SetTo ? T(-1) : T(0);
         } else if constexpr (is_integer_array<T>) {
@@ -267,7 +290,8 @@ private:
             std::memset(&value, SetTo ? 0xFF : 0, sizeof(T));
         }
     }
-    template<class T> static constexpr void bit_flip(T& value) {
+    template<class T>
+    static constexpr void bit_flip(T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             using uint_t = type_as_uint<T>;
             value = bit_cast<T>(~bit_cast<uint_t>(value));
@@ -279,7 +303,8 @@ private:
             bit_apply(value, [](auto& x) { bit_flip(x); });
         }
     }
-    template<class T> static constexpr void bit_flip_at(T& value, const bitsize_t index) {
+    template<class T>
+    static constexpr void bit_flip_at(T& value, const bitsize_t index) {
         if constexpr (std::is_integral_v<T>) {
             value ^= T(1) << index;
         } else if constexpr (std::is_enum_v<T>) {
@@ -314,7 +339,8 @@ private:
             bit_apply(value, [&](auto& x) { return bit_assign(x, index, what_value); });
         }
     }
-    template<class T> static constexpr bool bit_get(const T& value, const bitsize_t index) {
+    template<class T>
+    static constexpr bool bit_get(const T& value, const bitsize_t index) {
         if constexpr (is_like_integral<T>) {
             using integer_t = safe_underlying_type<T>;
             return (integer_t(value) & (integer_t(1) << index)) > 0;
@@ -339,7 +365,8 @@ private:
         }
     }
 
-    template<class T> static constexpr bool bit_test_all(const T& value) {
+    template<class T>
+    static constexpr bool bit_test_all(const T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             using uint_t = type_as_uint<T>;
             return bit_cast<uint_t>(value) == uint_t(-1);
@@ -353,7 +380,8 @@ private:
         }
     }
 
-    template<class T> static constexpr bool bit_test_any(const T& value) {
+    template<class T>
+    static constexpr bool bit_test_any(const T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             using uint_t = type_as_uint<T>;
             return bit_cast<uint_t>(value) != uint_t(0);
@@ -366,7 +394,8 @@ private:
             return bit_test_non_trivial_base<&bit_test_any<T>>(value);
         }
     }
-    template<class T> static constexpr bool bit_test_none(const T& value) {
+    template<class T>
+    static constexpr bool bit_test_none(const T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             using uint_t = type_as_uint<T>;
             return bit_cast<uint_t>(value) == uint_t(0);
@@ -393,7 +422,8 @@ private:
         static_assert(sizeof(What) == sizeof(T));
         bit_cast_to(what_emplace, value);
     }
-    template<class T> static constexpr bitsize_t bit_count_for_integer(T value) {
+    template<class T>
+    static constexpr bitsize_t bit_count_for_integer(T value) {
 #ifdef __cpp_lib_bitops
         return std::popcount(value_as_uint);
 #else
@@ -424,7 +454,8 @@ private:
         return count;
     }
 
-    template<class T> static constexpr bitsize_t bit_count(const T& value) {
+    template<class T>
+    static constexpr bitsize_t bit_count(const T& value) {
         if constexpr (is_convertible_as_uint<T>) {
             return bit_count_for_integer(bit_cast<type_as_uint<T>>(value));
         } else if constexpr (is_array_that_convertible_as_uint<T>) {
@@ -438,25 +469,31 @@ private:
         }
     }
 
-    template<class T> static constexpr bool is_bits_type = false;
-    template<class T> static constexpr bool is_bits_type<bits<T>> = true;
+    template<class T>
+    static constexpr bool is_bits_type = false;
+    template<class T>
+    static constexpr bool is_bits_type<bits<T>> = true;
 
-    template<class T1, class T2> using enable_compare_operator = std::enable_if_t<
+    template<class T1, class T2>
+    using enable_compare_operator = std::enable_if_t<
         (std::is_same_v<T1, bits> && !is_bits_type<T2>) || std::is_same_v<T2, bits>, int>;
 
-    template<class T> constexpr bits& op_assign(const T integer) {
+    template<class T>
+    constexpr bits& op_assign(const T integer) {
         bit_cast_to(m_value, static_cast<value_as_uint_type>(integer));
         return *this;
     }
 
-    template<class T> constexpr auto as_integer_sign_of() const {
+    template<class T>
+    constexpr auto as_integer_sign_of() const {
         if constexpr (std::is_unsigned_v<T>) {
             return as_uint();
         } else {
             return as_int();
         }
     }
-    template<class T> constexpr bits& narrow_assign_integer(const T& x) {
+    template<class T>
+    constexpr bits& narrow_assign_integer(const T& x) {
         bit_cast_to(m_value, static_cast<value_as_uint_type>(x));
         return *this;
     }
@@ -467,11 +504,13 @@ private:
     public:
         explicit constexpr narrow_t(Value& value) : value(value) {}
 
-        template<class T> constexpr void operator=(const T& x) {
+        template<class T>
+        constexpr void operator=(const T& x) {
             narrow_bit_cast_to(value, x);
         }
 
-        template<class To> constexpr To as() const {
+        template<class To>
+        constexpr To as() const {
             static_assert(!std::is_reference_v<To>);
             To result{};
             narrow_bit_cast_to(result, value);
@@ -479,11 +518,13 @@ private:
         }
     };
 
-    template<class RefTo> class ref_wrapper {
+    template<class RefTo>
+    class ref_wrapper {
     public:
         constexpr ref_wrapper(Value& value) : value(value) {}
 
-        template<class T> constexpr ref_wrapper& operator=(T&& other) {
+        template<class T>
+        constexpr ref_wrapper& operator=(T&& other) {
             static_assert(sizeof(T) == sizeof(RefTo));
             if constexpr (std::is_trivially_assignable_v<RefTo, T>) {
                 bit_cast_to(value, other);
@@ -497,7 +538,8 @@ private:
         constexpr RefTo get() const { return bit_cast<RefTo>(value); }
         constexpr operator RefTo() const { return get(); }
 
-        template<class... Args> constexpr auto operator()(Args&&... args) const
+        template<class... Args>
+        constexpr auto operator()(Args&&... args) const
             -> std::invoke_result_t<RefTo, Args...> {
             return std::invoke(get(), std::forward<Args>(args)...);
         }
@@ -526,6 +568,31 @@ private:
 
     private:
         Value& value;
+    };
+
+    class non_copy_constructible_wrapper {
+        using byte_array = std::array<std::byte, sizeof(value_type)>;
+
+    public:
+        constexpr non_copy_constructible_wrapper(const value_type& value)
+            : m_data(bit_cast<byte_array>(value)) {}
+
+        value_type& get() { return *reinterpret_cast<value_type*>(m_data.data()); }
+        const value_type& get() const {
+            return *reinterpret_cast<const value_type*>(m_data.data());
+        }
+
+        operator value_type&() { return get(); }
+        operator const value_type&() const { return get(); }
+
+        value_type* operator->() { return &get(); }
+        const value_type* operator->() const { return &get(); }
+
+        value_type* operator&() { return &get(); }
+        const value_type* operator&() const { return &get(); }
+
+    private:
+        byte_array m_data;
     };
 
 public:
@@ -558,12 +625,14 @@ public:
         const bitsize_t m_end;
     };
 
-    template<class Byte = std::uint_least8_t> [[nodiscard]] constexpr auto as_bytes() const {
+    template<class Byte = std::uint_least8_t>
+    [[nodiscard]] constexpr auto as_bytes() const {
         static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
         using byte_array = std::array<Byte, sizeof(value_type) / sizeof(Byte)>;
         return bit_cast<byte_array>(m_value);
     }
-    template<class Byte = std::uint_least8_t> [[nodiscard]] constexpr auto& as_bytes_ref() {
+    template<class Byte = std::uint_least8_t>
+    [[nodiscard]] constexpr auto& as_bytes_ref() {
         static_assert(sizeof(Byte) == sizeof(std::uint_least8_t));
         using byte_array = std::array<Byte, sizeof(value_type) / sizeof(Byte)>;
         return as_ref<byte_array>();
@@ -580,20 +649,23 @@ public:
         return bit_cast<type_as_int<value_type>>(m_value);
     }
 
-    template<class ArrayType> [[nodiscard]] constexpr auto as_array() const {
+    template<class ArrayType>
+    [[nodiscard]] constexpr auto as_array() const {
         static_assert(sizeof(value_type) % sizeof(ArrayType) == 0,
             "Array type must be a divisible of size of the value_type");
         using array_type = std::array<ArrayType, sizeof(value_type) / sizeof(ArrayType)>;
         return bit_cast<array_type>(m_value);
     }
 
-    template<class To> [[nodiscard]] constexpr To as() const {
+    template<class To>
+    [[nodiscard]] constexpr To as() const {
         static_assert(sizeof(To) == sizeof(value_type));
         static_assert(!std::is_reference_v<To>);
         return bit_cast<To>(m_value);
     }
 
-    template<class To> [[nodiscard]] constexpr auto& as_ref() {
+    template<class To>
+    [[nodiscard]] constexpr auto& as_ref() {
         using ref_type = std::conditional_t<std::is_const_v<Value>, const To&, To&>;
         if constexpr (std::is_same_v<value_type, std::remove_const_t<To>>) {
             return static_cast<ref_type>(m_value);
@@ -604,7 +676,8 @@ public:
         }
     }
 
-    template<class RefTo> [[nodiscard]] constexpr ref_wrapper<RefTo> as_refw() {
+    template<class RefTo>
+    [[nodiscard]] constexpr ref_wrapper<RefTo> as_refw() {
         return ref_wrapper<RefTo>(m_value);
     }
 
@@ -631,15 +704,24 @@ public:
     [[nodiscard]] constexpr bool any() const { return bit_test_any(m_value); }
     [[nodiscard]] constexpr bool none() const { return bit_test_none(m_value); }
 
-    [[nodiscard]] constexpr auto copy() const { return bit_cast<value_type>(m_value); }
+    [[nodiscard]] constexpr auto copy() const {
+        if constexpr (!std::is_copy_constructible_v<value_type>) {
+            return non_copy_constructible_wrapper(m_value);
+        } else {
+            return bit_cast<value_type>(m_value);
+        }
+    }
 
-    template<class To> constexpr void copy_to(To& to) {
+    template<class To>
+    constexpr void copy_to(To& to) {
         static_assert(sizeof(To) == sizeof(value_type));
         bit_cast_to(to, m_value);
     }
-    template<class To> constexpr void copy_to(const To&) = delete;
+    template<class To>
+    constexpr void copy_to(const To&) = delete;
 
-    template<class... Values> constexpr void emplace(const Values&... args) {
+    template<class... Values>
+    constexpr void emplace(const Values&... args) {
         static_assert((sizeof(Values) + ...) == sizeof(value_type),
             "The sum of the sizes of all the types must be equal to the size of the underlying type");
         bit_emplace(m_value, args...);
@@ -723,8 +805,10 @@ private:
     Value& m_value;
 };
 
-template<class T> bits(T&) -> bits<T>;
-template<class T> bits(const T&) -> bits<const T>;
+template<class T>
+bits(T&) -> bits<T>;
+template<class T>
+bits(const T&) -> bits<const T>;
 
 #undef BITS_ENABLE_INTRINSICS
 #undef BITS_HAS_BUILTIN

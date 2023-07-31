@@ -1,6 +1,6 @@
 #include <bits.hpp>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 int main() {
     std::cout << std::boolalpha;
