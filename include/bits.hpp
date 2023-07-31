@@ -70,11 +70,21 @@ private:
 
     template<std::size_t N>
     static decltype(auto) size_as_uint_impl() {
-        if constexpr (N <= 1) return std::uint8_t{};
-        else if constexpr (N <= 2) return std::uint16_t{};
-        else if constexpr (N <= 4) return std::uint32_t{};
-        else if constexpr (N <= 8) return std::uint64_t{};
-        else return biggest_uint_t{};
+        // clang-format off
+#ifdef UINT8_MAX
+        if constexpr (N <= 1) return std::uint8_t{}; else
+#endif
+#ifdef UINT16_MAX
+        if constexpr (N <= 2) return std::uint16_t{}; else
+#endif
+#ifdef UINT32_MAX
+        if constexpr (N <= 4) return std::uint32_t{}; else
+#endif
+#ifdef UINT64_MAX
+        if constexpr (N <= 8) return std::uint64_t{}; else
+#endif
+            // clang-format on
+            return biggest_uint_t{};
     }
 
     template<std::size_t N>
@@ -145,14 +155,12 @@ private:
     using const_like = std::conditional_t<std::is_const_v<From>, std::add_const_t<To>,
         std::remove_const_t<To>>;
 
+    // clang-format off
     template<class T>
-    static constexpr decltype(auto) unwrap(const bits<T>& val) {
-        return val.value();
-    }
+    static constexpr decltype(auto) unwrap(const bits<T>& val) { return val.value(); }
     template<class T>
-    static constexpr decltype(auto) unwrap(const T& val) {
-        return val;
-    }
+    static constexpr decltype(auto) unwrap(const T& val) { return val; }
+    // clang-format on
 
     static constexpr bool is_constant_evaluated() {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -247,11 +255,9 @@ private:
     static constexpr bool bit_compare(const Left& left, const Right& right) {
         static_assert(sizeof(Left) == sizeof(Right));
         using T = Left;
-        if constexpr (is_like_integral<Left> && is_like_integral<Right>) {
-            return Fn{}(type_as_uint<Left>(left), type_as_uint<Right>(right));
-        } else if constexpr (is_convertible_as_uint<T>) {
-            using uint_type = type_as_uint<T>;
-            return Fn{}(bit_cast<uint_type>(left), bit_cast<uint_type>(right));
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            return Fn{}(bit_cast<uint_t>(left), bit_cast<uint_t>(right));
         } else {
             using as_array_type = as_max_size_array<T>;
             return Fn{}(bit_cast<as_array_type>(left), bit_cast<as_array_type>(right));
@@ -272,22 +278,21 @@ private:
 
     template<bool SetTo, class T>
     static constexpr void bit_set(T& value) {
-        if constexpr (std::is_integral_v<T>) {
-            value = SetTo ? T(-1) : T(0);
-        } else if constexpr (is_integer_array<T>) {
+        if constexpr (is_convertible_as_uint<T>) {
+            using uint_t = type_as_uint<T>;
+            bit_cast_to(value, SetTo ? uint_t(-1) : uint_t(0));
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             for (auto& x : value) {
                 bit_set<SetTo>(x);
             }
         } else {
             if (is_constant_evaluated()) {
-                using array_type = as_max_size_array<T>;
-
-                auto value_as_arr = bit_cast<array_type>(value);
+                auto value_as_arr = bit_cast<std::array<unsigned char, sizeof(T)>>(value);
                 bit_set<SetTo>(value_as_arr);
-                value = bit_cast<T>(value_as_arr);
-                return;
+                bit_cast_to(value, value_as_arr);
+            } else {
+                std::memset(&value, SetTo ? 0xFF : 0, sizeof(T));
             }
-            std::memset(&value, SetTo ? 0xFF : 0, sizeof(T));
         }
     }
     template<class T>
@@ -666,13 +671,13 @@ public:
 
     template<class To>
     [[nodiscard]] constexpr auto& as_ref() {
-        using ref_type = std::conditional_t<std::is_const_v<Value>, const To&, To&>;
+        using ref_type = const_like<To, Value>&;
         if constexpr (std::is_same_v<value_type, std::remove_const_t<To>>) {
             return static_cast<ref_type>(m_value);
         } else {
             static_assert(sizeof(To) == sizeof(value_type));
             static_assert(!std::is_reference_v<To>);
-            return reinterpret_cast<ref_type&>(m_value);
+            return reinterpret_cast<ref_type>(m_value);
         }
     }
 
