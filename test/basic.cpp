@@ -1,6 +1,6 @@
+#include <cmath>
 #include <gtest/gtest.h>
 #include <tuple>
-#include <cmath>
 
 //#define BITS_COMPILER_INTRINSICS 1
 #include <bits.hpp>

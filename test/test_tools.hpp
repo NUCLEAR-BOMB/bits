@@ -32,10 +32,8 @@ struct test_struct : ::testing::Test {
 
 namespace custom_tests {
 
-template<class Expected, class Received>
-::testing::AssertionResult value_and_type_equals(const char* lexpr, const char* rexpr,
-                                                 const Expected& expected,
-                                                 const Received& received) {
+template<class Expected, class Received>::testing::AssertionResult value_and_type_equals(
+    const char* lexpr, const char* rexpr, const Expected& expected, const Received& received) {
     if constexpr (!std::is_same_v<Expected, Received>) {
         ::testing::Message msg;
         msg << "Expected equality of these types:\n";
