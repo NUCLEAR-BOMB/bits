@@ -7,5 +7,6 @@
 !test/
 !example/
 !CMakeLists.txt
+!CMakePresets.json
 !.clang-tidy
 !.clang-format

@@ -70,6 +70,7 @@ FetchContent_MakeAvailable(googletest)
 set_target_properties(gtest gtest_main PROPERTIES 
     VS_GLOBAL_EnableMicrosoftCodeAnalysis NO
     EXPORT_COMPILE_COMMANDS NO
+    COMPILE_OPTIONS $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w>
 )
 
 #get_target_property(bits_gtest_include_dirs GTest::gtest INTERFACE_INCLUDE_DIRECTORIES)

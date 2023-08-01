@@ -1,0 +1,34 @@
+{
+    "version": 5,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 24,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "msvc-ide",
+            "displayName": "Visual Studio config",
+            "generator": "Visual Studio 17 2022",
+            "cacheVariables": {
+                "BITS_GTEST_BRIEF": "YES",
+                "BITS_GTEST_DEBUG_BREAK": "YES"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": "Windows"
+                }
+            }
+        },
+        {
+            "name": "clang-make",
+            "displayName": "Makefiles Clang config",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_C_COMPILER": "clang"
+            }
+        }
+    ]
+}
