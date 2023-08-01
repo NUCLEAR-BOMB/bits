@@ -182,6 +182,12 @@ private:
             for (std::size_t i = 0; i < sizeof(To) / sizeof(elem_type); ++i) {
                 dest[i] = elem_type(int_type(src) >> (i * sizeof(elem_type) * CHAR_BIT));
             }
+        } else if constexpr (is_like_integral<To> && is_integer_array<From>) {
+            using elem_type = array_value_type<From>;
+
+            for (std::size_t i = 0; i < sizeof(From) / sizeof(elem_type); ++i) {
+                dest |= To(src[i]) << (i * sizeof(elem_type) * CHAR_BIT);
+            }
         } else {
             std::memcpy(std::addressof(dest), std::addressof(src), sizeof(To));
         }

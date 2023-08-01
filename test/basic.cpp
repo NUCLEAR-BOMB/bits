@@ -355,17 +355,20 @@ TEST_F(basic, copy_to) {
     bits{fvalue}.copy_to(result_to_copy);
     EXPECT_EQ(result_to_copy, (std::array<char, 4>{0, 0, -128, 63}));
 
-#if 0
     constexpr bool compile_time_copy_to = [] {
         std::array<std::uint8_t, 4> result_arr{};
         unsigned val = 0xFF'00'0F'F0;
 
         bits{val}.copy_to(result_arr);
-        if (result_arr != std::array<std::uint8_t, 4>{255, 0, 16, 240}) return false;
+        if (!array_eq(result_arr, {240, 15, 0, 255})) return false;
+
+        val = 0;
+        bits{result_arr}.copy_to(val);
+        if (val != 4278194160U) return false;
+
         return true;
     }();
     EXPECT_TRUE(compile_time_copy_to);
-#endif
 }
 
 TEST_F(basic, as_bytes_ref) {
