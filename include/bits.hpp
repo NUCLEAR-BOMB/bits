@@ -266,16 +266,22 @@ private:
 
     template<class T, class Fn>
     static constexpr auto bit_apply(T& value, Fn fn) {
-        using convert_to_t = std::conditional_t<is_convertible_as_uint<T>,
-            type_as_uint<T>, std::array<unsigned char, sizeof(T)>
-        >;
-        if constexpr (std::is_const_v<T>) {
-            const auto buffer = bit_cast<convert_to_t>(value);
-            return std::move(fn)(buffer);
+        if constexpr (is_array_that_convertible_as_uint<T>) {
+            for (auto& elem : value) {
+                std::move(fn)(elem);
+            }
         } else {
-            auto buffer = bit_cast<convert_to_t>(value);
-            std::move(fn)(buffer);
-            bit_cast_to(value, buffer);
+            using convert_to_t = std::conditional_t<is_convertible_as_uint<T>,
+                type_as_uint<T>,
+                std::array<unsigned char, sizeof(T)>>;
+            if constexpr (std::is_const_v<T>) {
+                const auto buffer = bit_cast<convert_to_t>(value);
+                return std::move(fn)(buffer);
+            } else {
+                auto buffer = bit_cast<convert_to_t>(value);
+                std::move(fn)(buffer);
+                bit_cast_to(value, buffer);
+            }
         }
     }
 
@@ -290,9 +296,7 @@ private:
             }
         } else {
             if (is_constant_evaluated()) {
-                auto value_as_arr = bit_cast<std::array<unsigned char, sizeof(T)>>(value);
-                bit_set<SetTo>(value_as_arr);
-                bit_cast_to(value, value_as_arr);
+                bit_apply(value, [](auto& x) { return bit_set<SetTo>(x); });
             } else {
                 std::memset(&value, SetTo ? 0xFF : 0, sizeof(T));
             }
@@ -302,10 +306,6 @@ private:
     static constexpr void bit_flip(T& value) {
         if constexpr (std::is_integral_v<T>) {
             value = T(~value);
-        } else if constexpr (is_array_that_convertible_as_uint<T>) {
-            for (auto& x : value) {
-                bit_flip(x);
-            }
         } else {
             bit_apply(value, [](auto& x) { bit_flip(x); });
         }
@@ -314,7 +314,7 @@ private:
     static constexpr void bit_flip_at(T& value, const bitsize_t index) {
         if constexpr (std::is_integral_v<T>) {
             value ^= T(1) << index;
-        } else if constexpr (is_integer_array<T>) {
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             using elem_type = array_value_type<T>;
             const auto array_index = index / (CHAR_BIT * sizeof(elem_type));
             const auto bit_index = index % (CHAR_BIT * sizeof(elem_type));
@@ -342,7 +342,7 @@ private:
     static constexpr bool bit_get(const T& value, const bitsize_t index) {
         if constexpr (std::is_integral_v<T>) {
             return (value & (T(1) << index)) > 0;
-        } else if constexpr (is_integer_array<T>) {
+        } else if constexpr (is_array_that_convertible_as_uint<T>) {
             using elem_type = array_value_type<T>;
             const auto array_index = index / (CHAR_BIT * sizeof(elem_type));
             const auto bit_index = index % (CHAR_BIT * sizeof(elem_type));
