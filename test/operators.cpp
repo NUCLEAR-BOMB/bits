@@ -8,7 +8,7 @@
 
 namespace {
 
-using operators = test_struct;
+using operators = test_base;
 
 TEST_F(operators, assigment) {
     bits{ivalue} = 2U;

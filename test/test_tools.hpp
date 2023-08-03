@@ -21,7 +21,7 @@ constexpr bool operator==(const large_struct left, const large_struct right) {
     return (left.lvalue == right.lvalue) && (left.dvalue == right.dvalue);
 }
 
-struct test_struct : ::testing::Test {
+struct test_base : ::testing::Test {
     int ivalue = 1;
     const int const_ivalue = 2;
     float fvalue = 1.f;

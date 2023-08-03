@@ -8,7 +8,7 @@
 
 namespace {
 
-using basic = test_struct;
+using basic = test_base;
 
 TEST_F(basic, constructor) {
     (void)bits{ivalue};

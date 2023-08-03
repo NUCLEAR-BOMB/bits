@@ -162,6 +162,11 @@ private:
     static constexpr decltype(auto) unwrap(const T& val) { return val; }
     // clang-format on
 
+    struct slice_indexes {
+        bitsize_t first;
+        bitsize_t last;
+    };
+
     static constexpr bool is_constant_evaluated() {
 #ifdef __cpp_lib_is_constant_evaluated
         return std::is_constant_evaluated();
@@ -585,35 +590,46 @@ private:
         byte_array m_data;
     };
 
-public:
-    [[nodiscard]] constexpr narrow_t narrow() { return narrow_t(m_value); }
+    template<class T>
+    static constexpr T make_replace_mask(const slice_indexes indexes) {
+        constexpr auto shl = [](auto x) {
+            return x < CHAR_BIT * sizeof(T) ? T(1) << x : T(0);
+        };
+        return shl(indexes.last) - shl(indexes.first);
+    }
+
+    template<class Dest, class Src>
+    static constexpr void bit_slice_assign(
+        Dest& dest, const Src& src, const slice_indexes indexes) {
+        if constexpr (std::is_integral_v<Dest> && std::is_integral_v<Src>) {
+            const auto replace_mask = make_replace_mask<Dest>(indexes);
+            dest &= ~replace_mask;
+            dest |= Dest(Dest(src) << indexes.first) & replace_mask;
+        } else {
+            bit_apply(dest, [&](auto& x) { return bit_slice_assign(x, src, indexes); });
+        }
+    }
 
     class slice {
-    private:
-        struct none_t {
-            constexpr none_t() = default;
-        };
-        struct some_t {
-            constexpr some_t(const bitsize_t value) : value(value) {}
-            constexpr some_t() = delete;
-            bitsize_t value;
-        };
-
     public:
-        explicit constexpr slice(const some_t start, const some_t end)
-            : m_start(start.value), m_end(end.value) {}
-        explicit constexpr slice(none_t, const bitsize_t end)
-            : m_start(static_cast<bitsize_t>(0)), m_end(end) {}
-        explicit constexpr slice(const bitsize_t start, none_t)
-            : m_start(start), m_end(static_cast<bitsize_t>(-1)) {}
+        constexpr slice(const bitsize_t first, const bitsize_t last, Value& value)
+            : indexes{first, last}, value(value) {}
 
-        constexpr bitsize_t start() const { return m_start; }
-        constexpr bitsize_t end() const { return m_end; }
+        constexpr bitsize_t first() const { return indexes.first; }
+        constexpr bitsize_t last() const { return indexes.last; }
+
+        constexpr slice& operator=(const value_as_uint_type other) {
+            bit_slice_assign(value, other, indexes);
+            return *this;
+        }
 
     private:
-        const bitsize_t m_start;
-        const bitsize_t m_end;
+        const slice_indexes indexes;
+        Value& value;
     };
+
+public:
+    [[nodiscard]] constexpr narrow_t narrow() { return narrow_t(m_value); }
 
     template<class Byte = std::uint_least8_t>
     [[nodiscard]] constexpr auto as_bytes() const {
@@ -790,6 +806,10 @@ public:
 
     [[nodiscard]] constexpr reference operator[](const bitsize_t index) {
         return reference(index, m_value);
+    }
+
+    [[nodiscard]] constexpr slice operator()(const bitsize_t first, const bitsize_t last) {
+        return slice(first, last, m_value);
     }
 
 private:
