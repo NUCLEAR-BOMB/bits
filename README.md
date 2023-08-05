@@ -72,16 +72,16 @@ Creating a copy of a class without a copy constructor
 
 ## CMake Options
 
-- `BITS_CLANG_FORMAT`
+- `BITS_CLANG_FORMAT` (default: `TRUE`)
     - Adds the clang-format target 'format'
-- `BITS_BUILD_TEST`
+- `BITS_BUILD_TEST` (default: `PROJECT_IS_TOP_LEVEL`)
     - Enable bits testing. Adds a target 'bits-test'
-- `BITS_BUILD_EXAMPLE`
+- `BITS_BUILD_EXAMPLE` (default: `PROJECT_IS_TOP_LEVEL`)
     - Enable bits example. Adds targets with the name
     'example-{name}'
-- `BITS_CLANG_TIDY`
+- `BITS_CLANG_TIDY` (default: `TRUE`)
     - Adds the clang-tidy target 'tidy' for Makefile and Ninja generators
-- `BITS_GTEST_BRIEF`:
+- `BITS_GTEST_BRIEF` (default: `FALSE`)
     - Enables gtest brief mode like running test program with --gtest_brief=1 or by setting the GTEST_BRIEF environment variable to 1
-- `BITS_GTEST_DEBUG_BREAK`:
+- `BITS_GTEST_DEBUG_BREAK` (default: `FALSE`)
     - Enables gtest break_on_failure and catch_exceptions=0 like running test program with --gtest_break_on_failure and --gtest_catch_exceptions=0 or by setting the GTEST_BREAK_ON_FAILURE environment variable to a value other than 0 and setting the GTEST_CATCH_EXCEPTIONS environment variable to 0
