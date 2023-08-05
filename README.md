@@ -69,3 +69,19 @@ Modifying the float value as an integer
 
 [copy_the_noncopyable.cpp](example/copy_the_noncopyable.cpp):
 Creating a copy of a class without a copy constructor
+
+## CMake Options
+
+- `BITS_CLANG_FORMAT`
+    - Adds the clang-format target 'format'
+- `BITS_BUILD_TEST`
+    - Enable bits testing. Adds a target 'bits-test'
+- `BITS_BUILD_EXAMPLE`
+    - Enable bits example. Adds targets with the name
+    'example-{name}'
+- `BITS_CLANG_TIDY`
+    - Adds the clang-tidy target 'tidy' for Makefile and Ninja generators
+- `BITS_GTEST_BRIEF`:
+    - Enables gtest brief mode like running test program with --gtest_brief=1 or by setting the GTEST_BRIEF environment variable to 1
+- `BITS_GTEST_DEBUG_BREAK`:
+    - Enables gtest break_on_failure and catch_exceptions=0 like running test program with --gtest_break_on_failure and --gtest_catch_exceptions=0 or by setting the GTEST_BREAK_ON_FAILURE environment variable to a value other than 0 and setting the GTEST_CATCH_EXCEPTIONS environment variable to 0
