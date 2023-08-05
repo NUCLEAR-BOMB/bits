@@ -3,6 +3,7 @@
 !.gitignore
 !.gitattributes
 !.editorconfig
+!README.md
 !include/
 !test/
 !example/
