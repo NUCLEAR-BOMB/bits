@@ -73,6 +73,22 @@ Creating a copy of a class without a copy constructor
 [modify_reference.cpp](example/modify_reference.cpp):
 Modification of a C++ reference as a structure field
 
+## Building with CMake
+
+Add to CMakeLists.txt:
+```cmake
+include(FetchContent)
+FetchContent_Declare(bits
+    GIT_REPOSITORY https://github.com/NUCLEAR-BOMB/bits.git
+    # Specify the commit hash that you would like to use the library with
+    GIT_TAG 03a61c7750487ad272b04cf96d66468e539c8309
+)
+FetchContent_MakeAvailable(bits)
+
+add_executable(my_target main.cpp)
+target_link_libraries(my_target bits)
+```
+
 ## CMake Options
 
 - `BITS_CLANG_FORMAT` (default: `PROJECT_IS_TOP_LEVEL`)
