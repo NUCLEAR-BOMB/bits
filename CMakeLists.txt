@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project("bits" LANGUAGES CXX)
 
-option(BITS_CLANG_FORMAT "Adds the clang-format target 'format'" ON)
+option(BITS_CLANG_FORMAT "Adds the clang-format target 'format'" ${PROJECT_IS_TOP_LEVEL})
 option(BITS_BUILD_TEST "Enable bits testing" ${PROJECT_IS_TOP_LEVEL})
 option(BITS_BUILD_EXAMPLE "Enable bits example" ${PROJECT_IS_TOP_LEVEL})
 

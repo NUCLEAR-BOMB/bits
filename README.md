@@ -75,7 +75,7 @@ Modification of a C++ reference as a structure field
 
 ## CMake Options
 
-- `BITS_CLANG_FORMAT` (default: `TRUE`)
+- `BITS_CLANG_FORMAT` (default: `PROJECT_IS_TOP_LEVEL`)
     - Adds the clang-format target 'format'
 - `BITS_BUILD_TEST` (default: `PROJECT_IS_TOP_LEVEL`)
     - Enable bits testing. Adds a target 'bits-test'
