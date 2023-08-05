@@ -7,7 +7,7 @@ bits is a library for direct bitwise value manipulation.
 - Single class library
 - Abstraction over bits
 - Almost without reinterpret_cast
-- Allows C++20 compiler extensions
+- Allows enable the C++20 compiler extension (`BITS_COMPILER_INTRINSICS`)
 - Constexpr support in some cases
 - Safe bitwise conversions (unless you don't want it)
 - Similar to `std::bitset`
