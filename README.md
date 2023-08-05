@@ -58,7 +58,7 @@ List of `bits` class methods:
 
 ## Examples
 
-[try_hack_me.cpp](example/hack_private.cpp):
+[hack_private.cpp](example/hack_private.cpp):
 Modifying a private class field
 
 [hack_bool.cpp](example/hack_bool.cpp):
