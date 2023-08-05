@@ -16,8 +16,9 @@ bits is a library for direct bitwise value manipulation.
 
 List of `bits` class methods:
 
-- `as_bytes()`: returns `std::uint_least8_t` `std::array` with bits of the current value
-- `as_bytes_ref()`: reinterpret_cast to `std::uint_least8_t` `std::array`
+- `as_bytes()`: returns `std::array` of `std::uint_least8_t` with bits of the current value
+- `as_bytes_ref()`: reinterpret_cast to `std::array` of `std::uint_least8_t`
+- `as_array<T>()`: returns `std::array` of `T` with bits of the current value
 - `as_uint()`: returns an unsigned integer with bits of the current value
 - `as_int()`: returns an signed integer with bits of the current value
 - `as<T>()`: bitwise cast to type `T`
@@ -39,7 +40,7 @@ List of `bits` class methods:
 - `any()`: checks if any of the bits are set to `true`
 - `none()`: checks if none of the bits are set to `true`
 - `copy()`: bitwise copies to the current type. If the copy constructor is deleted returns a wrapper
-- `copy_to(T& to)`: bitwise copies to the `to` variable
+- `copy_to(T&)`: bitwise copies to the `to` variable
 - `emplace(const Values&...)`: bitwise inserts `Values...` in place of the current value
 - `operator{+,-,*,/,%,&,|,^,<<,>>}=(unsigned integer)`: applies the operation to the current value as an unsigned integer
 - `operator{==,!=,>,>=,<,<=}`: bitwise compares the current value and with another passed value
