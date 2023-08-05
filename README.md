@@ -70,6 +70,9 @@ Modifying the float value as an integer
 [copy_the_noncopyable.cpp](example/copy_the_noncopyable.cpp):
 Creating a copy of a class without a copy constructor
 
+[modify_reference.cpp](example/modify_reference.cpp):
+Modification of a C++ reference as a structure field
+
 ## CMake Options
 
 - `BITS_CLANG_FORMAT` (default: `TRUE`)
