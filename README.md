@@ -99,6 +99,8 @@ target_link_libraries(my_target bits)
 - `BITS_BUILD_EXAMPLE` (default: `PROJECT_IS_TOP_LEVEL`)
     - Enable bits example. Adds targets with the name
     'example-{name}'
+- `BITS_SANITIZER` (default: `TRUE`)
+    - Enables an AddressSanitizer in MSVC or an AddressSanitizer with UndefinedBehaviorSanitizer in other compilers
 - `BITS_CLANG_TIDY` (default: `TRUE`)
     - Adds the clang-tidy target 'tidy' for Makefile and Ninja generators
 - `BITS_GTEST_BRIEF` (default: `FALSE`)

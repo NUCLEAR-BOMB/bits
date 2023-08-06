@@ -3,6 +3,7 @@ option(BITS_GTEST_BRIEF "Adds the --gtest_brief=1 argument for the test executab
 option(BITS_GTEST_DEBUG_BREAK "Adds the --gtest_break_on_failure and --gtest_catch_exceptions=0 arguments for the test executable" NO)
 
 option(BITS_CLANG_TIDY "Enables clang-tidy target 'tidy' for Makefile and Ninja generators" YES)
+option(BITS_SANITIZER "Enables sanitizers" ON)
 
 set(source
     main.cpp basic.cpp test_tools.hpp operators.cpp slice.cpp
@@ -37,6 +38,7 @@ $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
     -Wold-style-cast # Warn for C style casting
     -Wshadow # Warn whenever a local variable or type declaration shadows another variable
 >)
+
 target_include_directories("bits-test" PRIVATE .)
 
 set_target_properties("bits-test" PROPERTIES
@@ -73,10 +75,36 @@ set_target_properties(gtest gtest_main PROPERTIES
     COMPILE_OPTIONS $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w>
 )
 
-#get_target_property(bits_gtest_include_dirs GTest::gtest INTERFACE_INCLUDE_DIRECTORIES)
-#target_include_directories("bits-test" SYSTEM PRIVATE ${bits_gtest_include_dirs})
-
 target_link_libraries("bits-test" PRIVATE bits::bits GTest::gtest)
+
+function(target_add_sanitizer target)
+    set(libraries ${ARGN})
+    if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS /fsanitize=address)
+            target_link_options(${target} PRIVATE /INCREMENTAL:NO)
+            set_target_properties(${target} PROPERTIES
+                MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>"
+            )
+            return()
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+                message(WARNING "The debug build type is not supported for Windows Clang sanitizers")
+            endif()
+            set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS -fsanitize=address,undefined)
+            set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_DEFINITIONS _DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION)
+            target_link_options(${target} PRIVATE -coverage -fsanitize=address,undefined)
+            set_target_properties(${target} ${libraries} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded")
+            return()
+        endif()
+    endif()
+    target_compile_options(${target} PRIVATE -fsanitize=address,undefined)
+    target_link_options(${target} PRIVATE -coverage -fsanitize=address,undefined)
+endfunction()
+
+if (BITS_SANITIZER)
+    target_add_sanitizer(bits-test gtest)
+endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(gtest gtest_main PROPERTIES FOLDER "GoogleTest")
